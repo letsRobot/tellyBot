@@ -1,5 +1,5 @@
 /**
-* This is the main twitchBot program file.
+* Going to slowly move stuff out of this file and use telly.c as the main file. 
 */
 
 //#define USING_360_SERVOS

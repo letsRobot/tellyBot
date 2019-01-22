@@ -79,6 +79,8 @@ gripper[] =     { 900,  900,  2100};
 void servoSnap (pin, flag, angles[], time) {
   //Only called during initialization
   servo_angle(pin, init);
+  
+  //Main Loop
   while(1) {
     if (flag == 0) {
       servo_angle(pin, min);
