@@ -1,0 +1,95 @@
+To Do: 
+Each main module should run on it's own core. 
+There should be a configuration file for choosing options
+Pin assignments should also be addressed in the config file. 
+
+  Create Modules: 
+    Serial Reader / Command Parser
+    Driving Controls:
+      Configurations:  
+        Open Loop
+        Closed Loop
+        TriBot
+    Speed Boost
+    LEDs:
+      Sequencer which reads LEDs, w/ Timing for animations
+    
+    Servo Driver
+        Configurations: 
+          Gripper - Grip Max / Min
+          Swatter - Swat Max / Min / Timing
+          Pan & Tilt - Pan Max, Min, timing, step
+          Simple Arm (3 axis)
+
+
+Scratch:
+sequence(pin, dir, min, max, time, step){
+//prevPos, curPos, nextPos
+}
+
+
+#define GRIPPER_PIN 0
+
+void gripThings();
+int openPos = 2100;
+int closePos = 900;
+int gripState = 0;
+
+int main() {
+ cog_run(gripThings, 128);
+    while(1) {
+            if (strcmp(inputString, "z") == 0) {
+          gripState = 1;
+        }
+
+        if (strcmp(inputString, "x") == 0) {
+          gripState = 2;
+        }
+  }
+}
+
+
+int gripTimer = 150;
+
+void gripThings () {
+  servo_angle(GRIPPER_PIN, openPos);
+  dprint(term, "Starting GripThings");
+  while(1) {
+    if (gripState == 1) {
+      servo_angle(GRIPPER_PIN, openPos);
+      dprint(term, "Grip Open");
+      pause(gripTimer);
+      gripState = 0;
+    } else if (gripState == 2) {
+      servo_angle(GRIPPER_PIN, closePos);
+      dprint(term, "Grip Close");
+      pause(gripTimer); 
+      gripState = 0; 
+    } 
+    pause(10);
+  }                  
+}  
+
+
+
+//            Initial,  Min,  Max
+servoAngles[] = {   0,  900,  1800};
+gripper[] =     { 900,  900,  2100};
+
+void servoSnap (pin, flag, angles[], time) {
+  //Only called during initialization
+  servo_angle(pin, init);
+  while(1) {
+    if (flag == 0) {
+      servo_angle(pin, min);
+      pause(time);
+      flag = 1;
+    } else if (flag == 1) {
+      servo_angle(pin, max);
+      pause(time);
+      flag = 0;
+    }
+    pause(10);
+  }
+}
+
