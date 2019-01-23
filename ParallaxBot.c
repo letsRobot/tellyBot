@@ -46,7 +46,7 @@ void handle_eyes();
 
 #define LED_PIN     8
 #define LED_COUNT   18
-ws2812_t driver;
+ws2812 *led_driver;
 int ticks_per_ms;
   
 // used by handle_eyes function
@@ -56,7 +56,8 @@ volatile uint32_t pixel_color = 0xFFFFFF;
 volatile uint8_t brightness = 10;
 volatile uint32_t eye_color = 0xFFFFFF;
 volatile uint32_t ledColors[LED_COUNT];
-volatile uint32_t dim_array[LED_COUNT];
+
+uint32_t dim_array[LED_COUNT];
 
 #define EYES_BLINK 1
 #define EYES_INCREASE_BRIGHTNESS 2
@@ -117,7 +118,7 @@ int main()
 #endif
 
     // load the LED driver
-    if (ws2812b_init(&driver) < 0)
+    if (!(led_driver = ws2812b_open()))
         return 1;
     pause(500);
     cog_run(handle_eyes, 128);
@@ -384,16 +385,16 @@ void motor_controller()
                 Stop();
             }   
    
-        #ifdef STRING
-        if(fire_flag == 1)
-        {
-        if(current_ms - firing_duration_timer >= firing_duration)
-        {
-          servo_angle(16,0);
-          fire_flag = 0;
-        }       
-      }           
-        #endif       
+#ifdef STRING
+            if(fire_flag == 1)
+            {
+                if(current_ms - firing_duration_timer >= firing_duration)
+                {
+                    servo_angle(16,0);
+                    fire_flag = 0;
+                }       
+            }           
+#endif       
         }        
     }  
 }
@@ -447,7 +448,7 @@ void refresh_eyes()
         dim_array[i2] = scaled_color;      
     }   
 
-    ws2812_refresh(&driver, LED_PIN, dim_array, LED_COUNT);
+    ws2812_set(led_driver, LED_PIN, dim_array, LED_COUNT);
 }  
 
 void increase_brightness()
@@ -531,22 +532,25 @@ void eyes_blink()
 
 void drive_triBot(int idx)
 {
-  if(idx != 11) {
-    int times_speed = defaultStraightSpeed / 11;
-    servo_speed(12, motorA[idx] * times_speed); 
-    servo_speed(13, motorB[idx] * times_speed);
-    servo_speed(14, motorC[idx] * times_speed);
-  } else {
-    servo_disable(12);
-    servo_disable(13);
-    servo_disable(14);
-  }      
+    if(idx != 11)
+    {
+        int times_speed = defaultStraightSpeed / 11;
+        servo_speed(12, motorA[idx] * times_speed); 
+        servo_speed(13, motorB[idx] * times_speed);
+        servo_speed(14, motorC[idx] * times_speed);
+    }
+    else
+    {
+        servo_disable(12);
+        servo_disable(13);
+        servo_disable(14);
+    }      
 }  
 
 void set_triBot(int idx)
 {
-  cmd_dir = idx;
-  motor_flag = 1;
+    cmd_dir = idx;
+    motor_flag = 1;
 }  
 
 void tri_motor_controller()

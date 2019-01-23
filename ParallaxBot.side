@@ -1,6 +1,4 @@
 ParallaxBot.c
-ws2812.c
-ws2812_driver.spin
 telly.c
 >compiler=C
 >memtype=cmm main ram compact
