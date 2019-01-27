@@ -97,8 +97,10 @@ int pingDistance;
 //Simple Arms: 3 Axis Arm
 //shoulder pan, shoulder tilt, shoulder roll
 int leftArm[] = { 11, 10, 9};
+int rightArm[] = {16, 18, 17};
 //900 = 90 degrees, however the servers are slightly off so below are center values
 int leftArmPos[] = {900, 990, 950};
+int rightArmPos[] = {990, 990, 900};
 int armStep = 20;
 
 int main()
@@ -133,6 +135,9 @@ int main()
     servo_angle(leftArm[0], leftArmPos[0]);
     servo_angle(leftArm[1], leftArmPos[1]);
     servo_angle(leftArm[2], leftArmPos[2]);
+    servo_angle(rightArm[0], rightArmPos[0]);
+    servo_angle(rightArm[1], rightArmPos[1]);
+    servo_angle(rightArm[2], rightArmPos[2]);
 
     char c;  
     int inputStringLength = 20;
@@ -184,10 +189,14 @@ int main()
                         dprint(term, "forward_stop");
                         Stop();
                     }          
+                    
                     if (strcmp(inputString, "b_up") == 0) {
                         dprint(term, "back_stop");
                         Stop();
                     }
+                    
+         
+                                     
      
 #else
             
@@ -238,7 +247,44 @@ int main()
                     if (strcmp(inputString, "x") == 0) {
                         dprint(term, "stop with motors off");
                         set_triBot(11);
-                    }          
+                    }  
+                    
+                    if (strcmp(inputString, "i") == 0) {
+                        dprint(term, "Arm Arming");
+                        leftArmPos[0] += armStep;
+                        leftArmPos[1] += armStep;
+                        leftArmPos[2] += armStep;
+                        rightArmPos[0] -= armStep;
+                        rightArmPos[1] -= armStep;
+                        rightArmPos[2] -= armStep;
+                        
+                        servo_angle(leftArm[0], leftArmPos[0]);
+                        servo_angle(leftArm[1], leftArmPos[1]);
+                        servo_angle(leftArm[2], leftArmPos[2]);
+                        
+                        servo_angle(rightArm[0], rightArmPos[0]);
+                        servo_angle(rightArm[1], rightArmPos[1]);
+                        servo_angle(rightArm[2], rightArmPos[2]);
+                     
+                    }
+                    
+                    if (strcmp(inputString, "h") == 0) {
+                        dprint(term, "Arm Arming");
+                          leftArmPos[0] -= armStep;
+                          leftArmPos[1] -= armStep;
+                          leftArmPos[2] -= armStep;
+                          rightArmPos[0] += armStep;
+                          rightArmPos[1] += armStep;
+                          rightArmPos[2] += armStep;
+                          servo_angle(leftArm[0], leftArmPos[0]);
+                          servo_angle(leftArm[1], leftArmPos[1]);
+                          servo_angle(leftArm[2], leftArmPos[2]);
+                          
+                          servo_angle(rightArm[0], rightArmPos[0]);
+                          servo_angle(rightArm[1], rightArmPos[1]);
+                          servo_angle(rightArm[2], rightArmPos[2]);
+                         
+                    }        
             
 #endif
             
