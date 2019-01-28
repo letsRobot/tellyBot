@@ -600,7 +600,7 @@ void moveArm (int arm, int index, int dir) {
   while(1) {
     
     //pick Left Arm
-    if (arm == 0 && leftArm[index] != (leftArmPos[index] + armStep) && leftArmFlags[index] != 0) {
+    if (arm == 0 && leftArmFlags[index] != 0) {
       if (leftArmFlags[index] == 2 ) {
         leftArmPos[index] -= armStep;
       } else {
