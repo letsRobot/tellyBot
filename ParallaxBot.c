@@ -95,15 +95,26 @@ int defaultTurnSpeed = 200;
 
 int pingDistance;
 
-//Arm Triggers
-int leftArmFlags[] =    { 0, 0, 0};
-int rightArmFlags[] =   { 0, 0, 0};
-int storeArmStep = 20;
 
-int leftArm[] = { 11, 10, 9};
-int rightArm[] = {16, 18, 17};
-int leftArmPosDefault[] = {900, 990, 950};
-int rightArmPosDefault[] = {990, 990, 900};
+//ARMS (3-Axis)
+int storeArmStep = 20;
+int armIndex = 3; //The size of the left / right arm array
+
+//Left Arm Values
+int leftArm[] =            {   11,   10,    9 }; //servos
+int leftArmPosDefault[] =  {  900,  990,  950 }; //calibrated to center postion
+int leftArmMin[] =         {  200,  200,  200 }; 
+int leftArmMax[] =         { 1600, 1600, 1600 }; 
+int leftArmFlags[] =       {    0,    0,    0 }; 
+
+//Right Arm Values
+int rightArm[] =           {   16,   18,   17 };
+int rightArmPosDefault[] = {  990,  990,  900 };
+int rightArmMin[] =        {  200,  200,  200 }; 
+int rightArmMax[] =        { 1600, 1600, 1600 }; 
+int rightArmFlags[] =      {    0,    0,    0 };
+  
+
   
 
 
@@ -336,13 +347,13 @@ void pause(int ms)
     waitcnt(CNT + ms * ticks_per_ms);
 }
 
-void led_blink()                            // Blink function for other cog
+void led_blink()                             // Blink function for other cog
 {
-    while(1)                              // Endless loop for other cog
+    while(1)                                 // Endless loop for other cog
     {
-        high(26);                           // P26 LED on
+        high(26);                            // P26 LED on
         pause(1000);                         // ...for 0.1 seconds
-        low(26);                            // P26 LED off
+        low(26);                             // P26 LED off
         pause(1000);                         // ...for 0.1 seconds
     }
 }
@@ -585,40 +596,32 @@ void tri_motor_controller()
 
 int armTimer = 100;
 
+//Technically, this is more of a servo mover, and i can probably refactor to a more generic system
 void moveArm () {
-  //left Arm = 0, Right Arm = 1; 
   
-  //Simple Arms: 3 Axis Arm
-  //shoulder pan, shoulder tilt, shoulder roll
-  
-  //900 = 90 degrees, however the servers are slightly off so below are center values
+  //use calibrated defaults for starting position
   int leftArmPos[] = {leftArmPosDefault[0], leftArmPosDefault[1], leftArmPosDefault[2]};
   int rightArmPos[] = {rightArmPosDefault[0], rightArmPosDefault[1], rightArmPosDefault[2]};
   int armStep = storeArmStep;
 
-  //initialize servo
-  servo_angle(leftArm[0], leftArmPos[0]);
-  servo_angle(leftArm[1], leftArmPos[1]);
-  servo_angle(leftArm[2], leftArmPos[2]);
-  servo_angle(rightArm[0], rightArmPos[0]);
-  servo_angle(rightArm[1], rightArmPos[1]);
-  servo_angle(rightArm[2], rightArmPos[2]);
-  
-  
-  //servo_angle(leftArm[1], leftArmPos[1] + 550);
-  //servo_angle(rightArm[1], rightArmPos[1] - 750);
+  //initialize arms into default pose
+  for (int i = 0; i < armIndex; i++) {
+    servo_angle(leftArm[i], leftArmPos[i]);
+    servo_angle(rightArm[i], rightArmPos[i]);
+  }    
 
-  
-  
-  //dprint(term, "Arms Ready");
   while(1) {
+    
     //flappyBot();
 
     
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < armIndex; i++) {
        if (leftArmFlags[i] != 0) {
          if (leftArmFlags[i] == 2 ) {
          leftArmPos[i] -= armStep;
+         if (leftArmPos[i] < leftArmMin[i]) {
+          leftArmPos[i] = leftArmMin[i]; 
+         }           
        } else {
          leftArmPos[i] += armStep;
        }          
