@@ -43,7 +43,7 @@ void drive_triBot(int idx);
 void set_triBot(int idx);
 void tri_motor_controller();
 void handle_eyes();
-void moveArm(int arm, int index, int dir);
+void moveArm();
 
 #define LED_PIN     8
 #define LED_COUNT   18
@@ -90,19 +90,22 @@ int motorB[] = { -14, 12,  5,  2,  14,   2, -5, -12,  4, -4, 0};
 int motorC[] = {  14, -2,  6, 12, -14, -12, -6,   2,  4, -4, 0};
 
 //General Speed Controls
-int defaultStraightSpeed = 100;
-int defaultTurnSpeed = 100;
+int defaultStraightSpeed = 150;
+int defaultTurnSpeed = 200;
 
 int pingDistance;
 
 //Arm Triggers
 int leftArmFlags[] =    { 0, 0, 0};
 int rightArmFlags[] =   { 0, 0, 0};
+int storeArmStep = 20;
 
 int leftArm[] = { 11, 10, 9};
 int rightArm[] = {16, 18, 17};
 int leftArmPosDefault[] = {900, 990, 950};
 int rightArmPosDefault[] = {990, 990, 900};
+  
+
 
 
 
@@ -245,18 +248,39 @@ int main()
                     }  
                     
                     if (strcmp(inputString, "i") == 0) {
-                        dprint(term, "Left Shoulder Forward ");
+                        //dprint(term, "Left Shoulder Forward ");
                         leftArmFlags[0] = 1;
-                        moveArm (0, 0, 0);
-                 
-                     
+
                     }
                     
                     if (strcmp(inputString, "h") == 0) {
-                        dprint(term, "Left Shoulder Back ");
+                        //dprint(term, "Left Shoulder Back ");
                         leftArmFlags[0] = 2;
-                        moveArm (0, 0, 1);
-                    }        
+                
+                    }
+                       if (strcmp(inputString, "j") == 0) {
+                        //dprint(term, "Left Shoulder Forward ");
+                        leftArmFlags[1] = 1;
+
+                    }
+                    
+                    if (strcmp(inputString, "k") == 0) {
+                        //dprint(term, "Left Shoulder Back ");
+                        leftArmFlags[1] = 2;
+                
+                    } 
+                    
+                       if (strcmp(inputString, "m") == 0) {
+                        //dprint(term, "Left Shoulder Forward ");
+                        leftArmFlags[2] = 1;
+
+                    }
+                    
+                    if (strcmp(inputString, "n") == 0) {
+                        //dprint(term, "Left Shoulder Back ");
+                        leftArmFlags[2] = 2;
+                
+                    }         
             
 #endif
             
@@ -561,19 +585,17 @@ void tri_motor_controller()
 
 int armTimer = 100;
 
-void moveArm (int arm, int index, int dir) {
+void moveArm () {
   //left Arm = 0, Right Arm = 1; 
   
   //Simple Arms: 3 Axis Arm
   //shoulder pan, shoulder tilt, shoulder roll
-
+  
   //900 = 90 degrees, however the servers are slightly off so below are center values
   int leftArmPos[] = {leftArmPosDefault[0], leftArmPosDefault[1], leftArmPosDefault[2]};
   int rightArmPos[] = {rightArmPosDefault[0], rightArmPosDefault[1], rightArmPosDefault[2]};
-  int storeArmStep = 20;
   int armStep = storeArmStep;
-  
-  
+
   //initialize servo
   servo_angle(leftArm[0], leftArmPos[0]);
   servo_angle(leftArm[1], leftArmPos[1]);
@@ -582,24 +604,43 @@ void moveArm (int arm, int index, int dir) {
   servo_angle(rightArm[1], rightArmPos[1]);
   servo_angle(rightArm[2], rightArmPos[2]);
   
+  
+  //servo_angle(leftArm[1], leftArmPos[1] + 550);
+  //servo_angle(rightArm[1], rightArmPos[1] - 750);
 
   
   
   //dprint(term, "Arms Ready");
   while(1) {
+    //flappyBot();
+
     
-    //pick Left Arm
-    if (arm == 0 && leftArmFlags[index] != 0) {
-      if (leftArmFlags[index] == 2 ) {
-        leftArmPos[index] -= armStep;
-      } else {
-        leftArmPos[index] += armStep;
-      }          
-        servo_angle(leftArm[index], leftArmPos[index]);
-        //dprint(term, "Moving Left Arm");
-        pause(armTimer);
-        leftArmFlags[index] = 0;       
-    }    
+    for (int i = 0; i < 3; i++) {
+       if (leftArmFlags[i] != 0) {
+         if (leftArmFlags[i] == 2 ) {
+         leftArmPos[i] -= armStep;
+       } else {
+         leftArmPos[i] += armStep;
+       }          
+         servo_angle(leftArm[i], leftArmPos[i]);
+         //dprint(term, "Moving Left Arm");
+         pause(armTimer);
+         leftArmFlags[i] = 0;
+      }        
+    }        
     pause(10);
   }                  
 } 
+
+
+void flappyBot() {
+  
+  servo_angle(leftArm[2], 600);
+  servo_angle(rightArm[2], 1300);
+  pause(500);
+  servo_angle(leftArm[2], 1400);
+  servo_angle(rightArm[2], 300);
+  pause(500);
+ 
+  
+}  
