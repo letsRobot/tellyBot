@@ -554,18 +554,7 @@ void tri_motor_controller()
             if(current_ms-timeout_timer >= timeout_ms)
             {
                 drive_triBot(11);  //stop
-            }   
-   
-#ifdef STRING
-            if(fire_flag == 1)
-            {
-                if(current_ms - firing_duration_timer >= firing_duration)
-                {
-                    servo_angle(16,0);
-                    fire_flag = 0;
-                }       
-            }           
-#endif       
+            }         
         }        
     }  
 }
