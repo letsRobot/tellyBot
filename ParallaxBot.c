@@ -43,6 +43,7 @@ void drive_triBot(int idx);
 void set_triBot(int idx);
 void tri_motor_controller();
 void handle_eyes();
+void moveArm();
 
 #define LED_PIN     8
 #define LED_COUNT   18
@@ -89,19 +90,20 @@ int motorB[] = { -14, 12,  5,  2,  14,   2, -5, -12,  4, -4, 0};
 int motorC[] = {  14, -2,  6, 12, -14, -12, -6,   2,  4, -4, 0};
 
 //General Speed Controls
-int defaultStraightSpeed = 200;
+int defaultStraightSpeed = 100;
 int defaultTurnSpeed = 100;
 
 int pingDistance;
 
-//Simple Arms: 3 Axis Arm
-//shoulder pan, shoulder tilt, shoulder roll
+//Arm Triggers
+int leftArmFlag = 0;
+int rightArmFlag = 0;
 int leftArm[] = { 11, 10, 9};
 int rightArm[] = {16, 18, 17};
-//900 = 90 degrees, however the servers are slightly off so below are center values
-int leftArmPos[] = {900, 990, 950};
-int rightArmPos[] = {990, 990, 900};
-int armStep = 20;
+int leftArmPosDefault[] = {900, 990, 950};
+int rightArmPosDefault[] = {990, 990, 900};
+
+
 
 int main()
 {
@@ -124,6 +126,7 @@ int main()
         return 1;
     pause(500);
     cog_run(handle_eyes, 128);
+    cog_run(moveArm, 128);
     pause(100);
     update_eyes = EYES_BLINK;
     
@@ -132,12 +135,7 @@ int main()
     servo_angle(16,0);
 #endif    
 
-    servo_angle(leftArm[0], leftArmPos[0]);
-    servo_angle(leftArm[1], leftArmPos[1]);
-    servo_angle(leftArm[2], leftArmPos[2]);
-    servo_angle(rightArm[0], rightArmPos[0]);
-    servo_angle(rightArm[1], rightArmPos[1]);
-    servo_angle(rightArm[2], rightArmPos[2]);
+
 
     char c;  
     int inputStringLength = 20;
@@ -251,39 +249,17 @@ int main()
                     
                     if (strcmp(inputString, "i") == 0) {
                         dprint(term, "Arm Arming");
-                        leftArmPos[0] += armStep;
-                        leftArmPos[1] += armStep;
-                        leftArmPos[2] += armStep;
-                        rightArmPos[0] -= armStep;
-                        rightArmPos[1] -= armStep;
-                        rightArmPos[2] -= armStep;
-                        
-                        servo_angle(leftArm[0], leftArmPos[0]);
-                        servo_angle(leftArm[1], leftArmPos[1]);
-                        servo_angle(leftArm[2], leftArmPos[2]);
-                        
-                        servo_angle(rightArm[0], rightArmPos[0]);
-                        servo_angle(rightArm[1], rightArmPos[1]);
-                        servo_angle(rightArm[2], rightArmPos[2]);
+                        leftArmFlag = 1;
+                        moveArm (0, 0, 0);
+                 
                      
                     }
                     
                     if (strcmp(inputString, "h") == 0) {
                         dprint(term, "Arm Arming");
-                          leftArmPos[0] -= armStep;
-                          leftArmPos[1] -= armStep;
-                          leftArmPos[2] -= armStep;
-                          rightArmPos[0] += armStep;
-                          rightArmPos[1] += armStep;
-                          rightArmPos[2] += armStep;
-                          servo_angle(leftArm[0], leftArmPos[0]);
-                          servo_angle(leftArm[1], leftArmPos[1]);
-                          servo_angle(leftArm[2], leftArmPos[2]);
                           
-                          servo_angle(rightArm[0], rightArmPos[0]);
-                          servo_angle(rightArm[1], rightArmPos[1]);
-                          servo_angle(rightArm[2], rightArmPos[2]);
-                         
+                        leftArmFlag = 1;
+                        moveArm (0, 0, 1);
                     }        
             
 #endif
@@ -639,3 +615,55 @@ void tri_motor_controller()
         }        
     }  
 }
+
+int armTimer = 75;
+
+void moveArm (arm, index, dir) {
+  //left Arm = 0, Right Arm = 1; 
+  
+  //Simple Arms: 3 Axis Arm
+  //shoulder pan, shoulder tilt, shoulder roll
+
+  //900 = 90 degrees, however the servers are slightly off so below are center values
+  int leftArmPos[] = {leftArmPosDefault[0], leftArmPosDefault[1], leftArmPosDefault[2]};
+  int rightArmPos[] = {rightArmPosDefault[0], rightArmPosDefault[1], rightArmPosDefault[2]};
+  int storeArmStep = 20;
+  int armStep = 0;
+  
+  
+  //initialize servo
+  servo_angle(leftArm[0], leftArmPos[0]);
+  servo_angle(leftArm[1], leftArmPos[1]);
+  servo_angle(leftArm[2], leftArmPos[2]);
+  servo_angle(rightArm[0], rightArmPos[0]);
+  servo_angle(rightArm[1], rightArmPos[1]);
+  servo_angle(rightArm[2], rightArmPos[2]);
+  
+
+  
+  
+  dprint(term, "Arms Ready");
+  while(1) {
+    
+    if (dir = 1) {
+        armStep = (storeArmStep * -1);
+        dprint(term, "NegativeStep");
+    } else { 
+        armStep = storeArmStep;
+        dprint(term, "Positive Step");
+    }
+    
+    //pick Left Arm
+    if (arm == 0 && leftArm[index] != (leftArmPos[index] + armStep)) {
+        if (leftArmFlag = 1) {
+          leftArmPos[index] += armStep;
+          leftArmFlag = 0;
+          dprint(term, "Left Arm Position Set");
+      }        
+        servo_angle(leftArm[index], leftArmPos[index]);
+        dprint(term, "Moving Left Arm");
+        pause(armTimer);
+      }    
+    pause(10);
+  }                  
+} 
