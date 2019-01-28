@@ -96,8 +96,9 @@ int defaultTurnSpeed = 100;
 int pingDistance;
 
 //Arm Triggers
-int leftArmFlag = 0;
-int rightArmFlag = 0;
+int leftArmFlags[] =    { 0, 0, 0};
+int rightArmFlags[] =   { 0, 0, 0};
+
 int leftArm[] = { 11, 10, 9};
 int rightArm[] = {16, 18, 17};
 int leftArmPosDefault[] = {900, 990, 950};
@@ -117,6 +118,7 @@ int main()
 
 #ifdef TRI_BOT
     cog_run(tri_motor_controller,128);
+    cog_run(moveArm, 128);
 #else
     cog_run(motor_controller,128);
 #endif
@@ -126,14 +128,9 @@ int main()
         return 1;
     pause(500);
     cog_run(handle_eyes, 128);
-    cog_run(moveArm, 128);
+
     pause(100);
-    update_eyes = EYES_BLINK;
-    
-#ifdef STRING
-    servo_angle(17,can_position);
-    servo_angle(16,0);
-#endif    
+    update_eyes = EYES_BLINK;   
 
 
 
@@ -248,17 +245,16 @@ int main()
                     }  
                     
                     if (strcmp(inputString, "i") == 0) {
-                        dprint(term, "Arm Arming");
-                        leftArmFlag = 1;
+                        dprint(term, "Left Shoulder Forward ");
+                        leftArmFlags[0] = 1;
                         moveArm (0, 0, 0);
                  
                      
                     }
                     
                     if (strcmp(inputString, "h") == 0) {
-                        dprint(term, "Arm Arming");
-                          
-                        leftArmFlag = 1;
+                        dprint(term, "Left Shoulder Back ");
+                        leftArmFlags[0] = 2;
                         moveArm (0, 0, 1);
                     }        
             
@@ -273,39 +269,7 @@ int main()
                         update_eyes = EYES_DECREASE_BRIGHTNESS;
                         dprint(term,"brightness decreased");
                     }
-#ifdef STRING
-                    if (strcmp(inputString, "u") == 0)
-                    {
-                        can_position += 50;
-                        if (can_position >= 900)
-                        {
-                            can_position = 900;
-                        }
-                        servo_angle(17,can_position);
-                    }     
-     
-                    if (strcmp(inputString, "d") == 0)
-                    {
-                        can_position -= 50;
-                        if (can_position <= 0)
-                        {
-                            can_position = 0;
-                        }
-                        servo_angle(17,can_position);
-                    }    
-             
-                    if (strcmp(inputString, "s") == 0)
-                    {
-                        if(CNT>=firing_timer)
-                        {
-                            dprint(term,"fire");
-                            fire_flag = 1;
-                            firing_timer = CNT+firing_interval;
-                            firing_duration_timer=CNT;
-                            servo_angle(16,500);
-                        }               
-                    }              
-#endif
+              
                     if (strncmp(inputString, "led",3) == 0) 
                     { 
                         char * pBeg = &inputString[0];
@@ -406,17 +370,7 @@ void motor_controller()
             {
                 Stop();
             }   
-   
-#ifdef STRING
-            if(fire_flag == 1)
-            {
-                if(current_ms - firing_duration_timer >= firing_duration)
-                {
-                    servo_angle(16,0);
-                    fire_flag = 0;
-                }       
-            }           
-#endif       
+         
         }        
     }  
 }
@@ -616,7 +570,7 @@ void tri_motor_controller()
     }  
 }
 
-int armTimer = 150;
+int armTimer = 100;
 
 void moveArm (int arm, int index, int dir) {
   //left Arm = 0, Right Arm = 1; 
@@ -628,7 +582,7 @@ void moveArm (int arm, int index, int dir) {
   int leftArmPos[] = {leftArmPosDefault[0], leftArmPosDefault[1], leftArmPosDefault[2]};
   int rightArmPos[] = {rightArmPosDefault[0], rightArmPosDefault[1], rightArmPosDefault[2]};
   int storeArmStep = 20;
-  int armStep = 0;
+  int armStep = storeArmStep;
   
   
   //initialize servo
@@ -642,25 +596,20 @@ void moveArm (int arm, int index, int dir) {
 
   
   
-  dprint(term, "Arms Ready");
+  //dprint(term, "Arms Ready");
   while(1) {
     
-    if (dir == 1 && leftArmFlag == 1) {
-        armStep = (storeArmStep * -1);
-        dprint(term, "NegativeStep");
-    } else if (dir == 0 && leftArmFlag == 1) { 
-        armStep = storeArmStep;
-        dprint(term, "Positive Step");
-    }
-    
     //pick Left Arm
-    if (arm == 0 && leftArm[index] != (leftArmPos[index] + armStep) && leftArmFlag == 1) {
-          leftArmPos[index] += armStep;
-          dprint(term, "Left Arm Position Set");
-          servo_angle(leftArm[index], leftArmPos[index]);
-          dprint(term, "Moving Left Arm");
-          pause(armTimer);
-          leftArmFlag = 0;       
+    if (arm == 0 && leftArm[index] != (leftArmPos[index] + armStep) && leftArmFlags[index] != 0) {
+      if (leftArmFlags[index] == 2 ) {
+        leftArmPos[index] -= armStep;
+      } else {
+        leftArmPos[index] += armStep;
+      }          
+        servo_angle(leftArm[index], leftArmPos[index]);
+        //dprint(term, "Moving Left Arm");
+        pause(armTimer);
+        leftArmFlags[index] = 0;       
     }    
     pause(10);
   }                  
