@@ -43,7 +43,7 @@ void drive_triBot(int idx);
 void set_triBot(int idx);
 void tri_motor_controller();
 void handle_eyes();
-void moveArm();
+void moveArm(int arm, int index, int dir);
 
 #define LED_PIN     8
 #define LED_COUNT   18
@@ -616,9 +616,9 @@ void tri_motor_controller()
     }  
 }
 
-int armTimer = 75;
+int armTimer = 150;
 
-void moveArm (arm, index, dir) {
+void moveArm (int arm, int index, int dir) {
   //left Arm = 0, Right Arm = 1; 
   
   //Simple Arms: 3 Axis Arm
@@ -645,25 +645,23 @@ void moveArm (arm, index, dir) {
   dprint(term, "Arms Ready");
   while(1) {
     
-    if (dir = 1) {
+    if (dir == 1 && leftArmFlag == 1) {
         armStep = (storeArmStep * -1);
         dprint(term, "NegativeStep");
-    } else { 
+    } else if (dir == 0 && leftArmFlag == 1) { 
         armStep = storeArmStep;
         dprint(term, "Positive Step");
     }
     
     //pick Left Arm
-    if (arm == 0 && leftArm[index] != (leftArmPos[index] + armStep)) {
-        if (leftArmFlag = 1) {
+    if (arm == 0 && leftArm[index] != (leftArmPos[index] + armStep) && leftArmFlag == 1) {
           leftArmPos[index] += armStep;
-          leftArmFlag = 0;
           dprint(term, "Left Arm Position Set");
-      }        
-        servo_angle(leftArm[index], leftArmPos[index]);
-        dprint(term, "Moving Left Arm");
-        pause(armTimer);
-      }    
+          servo_angle(leftArm[index], leftArmPos[index]);
+          dprint(term, "Moving Left Arm");
+          pause(armTimer);
+          leftArmFlag = 0;       
+    }    
     pause(10);
   }                  
 } 
