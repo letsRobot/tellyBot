@@ -20,6 +20,7 @@ void Step(int leftSpeed, int rightSpeed);
 void Stop(void);
 void led_blink();
 void eyes_blink();
+void eyes_cop();
 void motor_controller();
 void neopixel_controller();
 void set_motor_controller(int leftSpeed, int rightSpeed);
@@ -27,6 +28,7 @@ void set_neopixel_group(uint32_t color);
 void set_neopixel(uint8_t pixel_num, uint32_t color);
 void pause(int ms);
 void refresh_eyes();
+void refresh_eyes_masked(char ledmask[]);
 void increase_brightness();
 void decrease_brightness();
 void drive_triBot(int idx);
@@ -49,9 +51,11 @@ volatile uint8_t pixel = 0;
 volatile uint32_t pixel_color = 0xFFFFFF;
 volatile uint8_t brightness = 10;
 volatile uint32_t eye_color = 0xFFFFFF;
-volatile uint32_t ledColors[LED_COUNT];
 volatile int eye_command = 0;
+volatile uint8_t current_mask = 1;
+volatile uint8_t update_mask = 0;
 
+uint32_t ledColors[LED_COUNT];
 uint32_t dim_array[LED_COUNT];
 
 #define EYES_BLINK 1
@@ -59,6 +63,28 @@ uint32_t dim_array[LED_COUNT];
 #define EYES_DECREASE_BRIGHTNESS 3
 #define EYES_SET_COLOR_SINGLE_PIXEL 4
 #define EYES_SET_COLOR_ALL_PIXELS 5
+#define EYES_SET_MASK 6
+#define EYES_DO_LRN 7
+#define EYES_DO_COP 8
+
+char nmask[10][LED_COUNT] = 
+{
+    {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}, // all on
+    {1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1}, // o.o
+    {0,0,0,1,1,1,0,0,0,0,0,0,1,1,1,0,0,0}, // -.-
+    {0,1,0,1,0,1,0,0,0,0,1,0,1,0,1,0,0,0}, // v.v
+    {0,0,0,1,0,1,0,1,0,0,0,0,1,0,1,0,1,0}, // ^.^
+    {1,0,1,0,1,0,1,0,1,1,0,1,0,1,0,1,0,1}, // x.x
+    {0,1,1,1,1,0,1,0,0,1,1,0,0,1,1,0,0,1}, // \./
+    {0,1,0,0,1,0,1,1,1,0,1,0,0,1,0,1,1,1}, // T.T
+    {1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,0,1}, // U.U
+    {1,0,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1}, // n.n
+};
+
+uint32_t cop1[LED_COUNT] = {0xFF0000 ,0xFF0000 ,0xFF0000 ,0xFF0000 ,0xFF0000 ,0xFF0000 ,0xFF0000 ,0xFF0000 ,0xFF0000 ,0x0000FF ,0x0000FF ,0x0000FF ,0x0000FF ,0x0000FF ,0x0000FF ,0x0000FF ,0x0000FF ,0x0000FF};
+uint32_t cop2[LED_COUNT] = {0x0000FF ,0x0000FF ,0x0000FF ,0x0000FF ,0x0000FF ,0x0000FF ,0x0000FF ,0x0000FF ,0x0000FF ,0xFF0000 ,0xFF0000 ,0xFF0000 ,0xFF0000 ,0xFF0000 ,0xFF0000 ,0xFF0000 ,0xFF0000 ,0xFF0000};
+uint32_t lrn[LED_COUNT] = {0xA652AF ,0x000000 ,0x5F79FF ,0xF16B74 ,0x000000 ,0x21BCE5 ,0xF9AA67 ,0xF3EB48 ,0x97E062 ,0xA652AF ,0x000000 ,0x5F79FF ,0xF16B74 ,0x000000 ,0x21BCE5 ,0xF9AA67 ,0xF3EB48 ,0x97E062};
+
 
 fdserial *term; //enables full-duplex serilization of the terminal (In otherwise, 2 way signals between this computer and the robot)
 int ticks = 12; //each tick makes the wheel move by 3.25mm, 64 ticks is a full wheel rotation (or 208mm)
@@ -328,6 +354,83 @@ int main()
                         dprint(term,"brightness decreased");
                     }
               
+                    if (strcmp(inputString, "ms0") == 0) {
+                      dprint(term,"mask 0");
+                      update_mask = 0;
+                      update_eyes = EYES_SET_MASK;
+                    }
+                    
+                    if (strcmp(inputString, "ms1") == 0) {
+                      dprint(term,"mask 1");
+                      update_mask = 1;
+                      update_eyes = EYES_SET_MASK;
+                    }
+                    
+                    if (strcmp(inputString, "ms2") == 0) {
+                      dprint(term,"mask 2");
+                      update_mask = 2;
+                      update_eyes = EYES_SET_MASK;
+                    }
+                      
+                    if (strcmp(inputString, "ms3") == 0) {
+                      dprint(term,"mask 3");
+                      update_mask = 3;
+                      update_eyes = EYES_SET_MASK;
+                    }
+                    
+                    if (strcmp(inputString, "ms4") == 0) {
+                      dprint(term,"mask 4");
+                      update_mask = 4;
+                      update_eyes = EYES_SET_MASK;
+                    }
+                    
+                    if (strcmp(inputString, "ms5") == 0) {
+                      dprint(term,"mask 5");
+                      update_mask = 5;
+                      update_eyes = EYES_SET_MASK;
+                    }
+                    
+                    if (strcmp(inputString, "ms6") == 0) {
+                      dprint(term,"mask 6");
+                      update_mask = 6;
+                      update_eyes = EYES_SET_MASK;
+                    }
+                    
+                    if (strcmp(inputString, "ms7") == 0) {
+                      dprint(term,"mask 7");
+                      update_mask = 7;
+                      update_eyes = EYES_SET_MASK;
+                    }
+                    
+                    if (strcmp(inputString, "ms8") == 0) {
+                      dprint(term,"mask 8");
+                      update_mask = 8;
+                      update_eyes = EYES_SET_MASK;
+                    }
+                    
+                    if (strcmp(inputString, "ms9") == 0) {
+                      dprint(term,"mask 9");
+                      update_mask = 9;
+                      update_eyes = EYES_SET_MASK;
+                    }
+                    
+                    if (strcmp(inputString, "lrn") == 0) {
+                      dprint(term,"mask 9 lrn");
+                      update_mask = 9;
+                      update_eyes = EYES_DO_LRN;
+                      refresh_eyes();
+                    }
+                    
+                    if (strcmp(inputString, "cop") == 0) {
+                      dprint(term,"cop");
+                      update_eyes = EYES_DO_COP;
+                    }
+
+                    if (strcmp(inputString, "blink") == 0) {
+                      dprint(term,"blink");
+                      update_eyes = EYES_BLINK;
+                    }
+
                     if (strncmp(inputString, "led",3) == 0) 
                     { 
                         char * pBeg = &inputString[0];
@@ -435,6 +538,8 @@ void motor_controller()
 
 void handle_eyes()
 {
+    set_neopixel_group(0xffffff);
+    
     while(1)
     {
         if(update_eyes > 0)
@@ -461,6 +566,18 @@ void handle_eyes()
                 case EYES_SET_COLOR_ALL_PIXELS:
                     set_neopixel_group(pixel_color);
                     break;
+                case EYES_SET_MASK:
+                    current_mask = update_mask;
+                    refresh_eyes_masked(nmask[current_mask]);
+                    break;
+                case EYES_DO_LRN:
+                    memcpy(ledColors, lrn, sizeof(lrn));
+                    current_mask = update_mask;
+                    refresh_eyes_masked(nmask[current_mask]);
+                    break;
+                case EYES_DO_COP:
+                    eyes_cop();
+                    break;
             }
         }
     }
@@ -469,7 +586,6 @@ void handle_eyes()
 void refresh_eyes()
 {
     int i2;
-
     for (i2 = 0; i2 < LED_COUNT; ++i2)
     {
         uint32_t red = (ledColors[i2]>>16) & 0xFF;
@@ -483,29 +599,7 @@ void refresh_eyes()
     }   
 
     ws2812_set(led_driver, LED_PIN, dim_array, LED_COUNT);
-}  
-
-void increase_brightness()
-{
-    int16_t temp_brightness = brightness+10;
-    if(temp_brightness>255)
-    {
-        temp_brightness = 255;
-    } 
-    brightness = temp_brightness;
-    refresh_eyes();
-}  
-
-void decrease_brightness()
-{
-    int16_t temp_brightness = brightness-10;
-    if(temp_brightness<=1)
-    {
-        temp_brightness = 2;
-    } 
-    brightness = temp_brightness;
-    refresh_eyes();
-} 
+}
 
 void set_neopixel(uint8_t pixel_num, uint32_t color)
 {
@@ -526,43 +620,77 @@ void set_neopixel_group(uint32_t color)
     refresh_eyes();
 }
 
-void eyes_blink()
+void refresh_eyes_masked(char ledmask[])
 {
-    int doot;
-    doot=0;
-    while(doot<LED_COUNT)
+    int i2;
+    for (i2 = 0; i2 < LED_COUNT; ++i2)
     {
-        if(doot==4||doot==13)
-            set_neopixel(doot,0x000000);  
+        if (ledmask[i2] == 1)
+        {
+            uint32_t red = (ledColors[i2]>>16) & 0xFF;
+            red = red*brightness/255;
+            uint32_t green = (ledColors[i2]>>8) & 0xFF;
+            green = green*brightness/255;
+            uint32_t blue = (ledColors[i2]) & 0xFF;
+            blue = blue*brightness/255;
+            uint32_t scaled_color = (red << 16)+(green << 8)+(blue);
+            dim_array[i2] = scaled_color;
+        }
         else
-            set_neopixel(doot,eye_color);         
-        doot+=1;
-        pause(1);
-    }     
-    doot =0;   
-    pause(400);
-    while(doot<LED_COUNT)
-    {
-        if((doot>=3 && doot<=5)|| (doot>=12 && doot<=14))
-            set_neopixel(doot,eye_color);  
-        else
-            set_neopixel(doot,0x000000);         
-        doot+=1;
-        pause(1);
-    }     
-    doot =0; 
-    pause(400);
-    while(doot<LED_COUNT)
-    {
-        if(doot==4||doot==13)
-            set_neopixel(doot,0x000000);  
-        else
-            set_neopixel(doot,eye_color);         
-        doot+=1;
-        pause(1);
+        {
+            dim_array[i2] = 0x000000;
+        }
     }
+    ws2812_set(led_driver, LED_PIN, dim_array, LED_COUNT);
+}
+
+void increase_brightness()
+{
+    int16_t temp_brightness = brightness+10;
+    if(temp_brightness>255)
+    {
+        temp_brightness = 255;
+    } 
+    brightness = temp_brightness;
+    refresh_eyes_masked(nmask[current_mask]);
 }  
 
+void decrease_brightness()
+{
+    int16_t temp_brightness = brightness-10;
+    if(temp_brightness<=1)
+    {
+        temp_brightness = 2;
+    } 
+    brightness = temp_brightness;
+    refresh_eyes_masked(nmask[current_mask]);
+} 
+
+void eyes_blink()
+{
+    refresh_eyes_masked(nmask[current_mask == 2 ? 1 : current_mask]);
+    pause(500);
+    refresh_eyes_masked(nmask[2]);
+    pause(500);
+    refresh_eyes_masked(nmask[current_mask == 2 ? 1 : current_mask]);
+    pause(1);
+}
+
+void eyes_cop()
+{
+    int a=0;
+    for (a=0; a <= 5; ++a)
+    {
+        memcpy(ledColors, cop1, sizeof(cop1));
+        refresh_eyes_masked(nmask[0]);
+        pause(400);
+        memcpy(ledColors, cop2, sizeof(cop2));
+        refresh_eyes_masked(nmask[0]);
+        pause(400);
+    }
+    set_neopixel_group(0xFFFFFF);
+    refresh_eyes_masked(nmask[current_mask]);
+}    
 
 void drive_triBot(int idx)
 {
