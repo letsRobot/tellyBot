@@ -16,16 +16,6 @@
 #endif  
 #include "ws2812.h"
 
-//#define STRING //Defines whether its String Fury or not
-#ifdef STRING
-    #define firing_interval CLKFREQ *5 //Time between shots
-    #define firing_duration CLKFREQ /2 //Duration of shots
-    uint32_t firing_timer = 0;
-    uint8_t fire_flag = 0;
-    uint32_t firing_duration_timer = 0;
-    int16_t can_position = 200;
-#endif
-
 void Step(int leftSpeed, int rightSpeed);
 void Stop(void);
 void led_blink();
@@ -43,6 +33,7 @@ void drive_triBot(int idx);
 void set_triBot(int idx);
 void tri_motor_controller();
 void handle_eyes();
+void moveArmsAndPanTilt();
 void moveLeftArm();
 void moveRightArm();
 void movePanTilt();
@@ -59,6 +50,7 @@ volatile uint32_t pixel_color = 0xFFFFFF;
 volatile uint8_t brightness = 10;
 volatile uint32_t eye_color = 0xFFFFFF;
 volatile uint32_t ledColors[LED_COUNT];
+volatile int eye_command = 0;
 
 uint32_t dim_array[LED_COUNT];
 
@@ -97,9 +89,9 @@ int defaultTurnSpeed = 200;
 
 int pingDistance;
 
-
 //ARMS (3-Axis)
 int storeArmStep = 20;
+int armTimer = 100;
 int armIndex = 3; //The size of the left / right arm array
 
 //Left Arm Values
@@ -117,6 +109,8 @@ int rightArmMax[] =        { 1600, 1600, 1600 };
 int rightArmFlags[] =      {    0,    0,    0 };
   
 //pan and tilt values
+int storePanTiltStep = 20;
+int panTiltTimer = 100;
 int panTiltIndex = 2;
 int panTilt[] =            {   19,   20 };
 int panTiltDefault[] =     {  900,  900 };
@@ -171,9 +165,10 @@ int main()
 
 #ifdef TRI_BOT
     cog_run(tri_motor_controller,128);
-    cog_run(moveLeftArm, 128);
-    cog_run(moveRightArm, 128);
-    cog_run(movePanTilt, 128);
+    cog_run(moveArmsAndPanTilt, 128);
+    //cog_run(moveLeftArm, 128);
+    //cog_run(moveRightArm, 128);
+    //cog_run(movePanTilt, 128);
     
 #else
     cog_run(motor_controller,128);
@@ -182,7 +177,8 @@ int main()
     // load the LED driver
     if (!(led_driver = ws2812b_open()))
         return 1;
-    pause(500);
+
+    pause(250);
     cog_run(handle_eyes, 128);
 
     pause(100);
@@ -245,12 +241,9 @@ int main()
                         dprint(term, "back_stop");
                         Stop();
                     }
-                    
-         
-                                     
-     
+
 #else
-            
+
                     if (strcmp(inputString, "l") == 0) {
                         dprint(term, "left");
                         set_triBot(9);
@@ -449,7 +442,7 @@ void handle_eyes()
             // I'm doing this local copy of the update_eyes variable so that I can clear update_eyes variable right away
             // this makes it so that if you get another eye command while it's still in the middle of doing the last one
             // it will do that new one after.  This only allows one queued up command, but that should be fine for most cases
-            int eye_command = update_eyes;
+            eye_command = update_eyes;
             update_eyes = 0;
             switch(eye_command)
             {
@@ -625,13 +618,116 @@ void tri_motor_controller()
 }
 
 
-
-
 //Technically, this is more of a servo mover, and i can probably refactor to a more generic system
-int armTimer = 100;
+
+void moveArmsAndPanTilt()
+{
+  int armStep = storeArmStep;
+
+  int panTiltStep = storePanTiltStep;
+  
+  //use calibrated defaults for starting position
+  int panTiltPos[] = {panTiltDefault[0], panTiltDefault[1]};
+
+  //initialize arms into default pose
+  for (int i = 0; i < panTiltIndex; i++)
+  {
+    servo_angle(panTilt[i], panTiltPos[i]);
+  }    
+  
+  //use calibrated defaults for starting position
+  int leftArmPos[] = {leftArmPosDefault[0], leftArmPosDefault[1], leftArmPosDefault[2]};
+
+  //use calibrated defaults for starting position
+  int rightArmPos[] = {rightArmPosDefault[0], rightArmPosDefault[1], rightArmPosDefault[2]};
+
+  //initialize arms into default pose
+  for (int i = 0; i < armIndex; i++)
+  {
+    servo_angle(rightArm[i], rightArmPos[i]);
+    servo_angle(leftArm[i], leftArmPos[i]);
+  }    
+
+  while(1)
+  {
+    for (int i = 0; i < panTiltIndex; i++)
+    {
+       if (panTiltFlags[i] != 0 )
+       {
+         if (panTiltFlags[i] == 2 )
+         {
+           panTiltPos[i] -= panTiltStep;
+           if (panTiltPos[i] < panTiltMin[i])
+           {
+             panTiltPos[i] = panTiltMin[i]; 
+           }           
+         }
+         else
+         {
+           panTiltPos[i] += panTiltStep;
+           if (panTiltPos[i] > panTiltMax[i])
+           {
+             panTiltPos[i] = panTiltMax[i]; 
+           }           
+         }          
+         servo_angle(panTilt[i], panTiltPos[i]);
+         pause(panTiltTimer);
+         panTiltFlags[i] = 0;
+      }        
+    }        
+    for (int i = 0; i < armIndex; i++)
+    {
+       if (leftArmFlags[i] != 0 )
+       {
+         if (leftArmFlags[i] == 2 )
+         {
+           leftArmPos[i] -= armStep;
+           if (leftArmPos[i] < leftArmMin[i])
+           {
+             leftArmPos[i] = leftArmMin[i]; 
+           }           
+         }
+         else
+         {
+           leftArmPos[i] += armStep;
+           if (leftArmPos[i] > leftArmMax[i])
+           {
+             leftArmPos[i] = leftArmMax[i]; 
+           }           
+         }          
+         servo_angle(leftArm[i], leftArmPos[i]);
+         pause(armTimer);
+         leftArmFlags[i] = 0;
+       }        
+       if (rightArmFlags[i] != 0 )
+       {
+         if (rightArmFlags[i] == 2 )
+         {
+           rightArmPos[i] -= armStep;
+           if (rightArmPos[i] < rightArmMin[i])
+           {
+             rightArmPos[i] = rightArmMin[i]; 
+           }           
+         }
+         else
+         {
+           rightArmPos[i] += armStep;
+           if (rightArmPos[i] > rightArmMax[i])
+           {
+             rightArmPos[i] = rightArmMax[i]; 
+           }           
+         }          
+         servo_angle(rightArm[i], rightArmPos[i]);
+         pause(armTimer);
+         rightArmFlags[i] = 0;
+       }        
+    }        
+    pause(10);
+  }                  
+} 
 
 
-void moveLeftArm () {
+void moveLeftArm() {
   int armStep = storeArmStep;
   //use calibrated defaults for starting position
   int leftArmPos[] = {leftArmPosDefault[0], leftArmPosDefault[1], leftArmPosDefault[2]};
@@ -666,7 +762,7 @@ void moveLeftArm () {
   }                  
 } 
 
-void moveRightArm () {
+void moveRightArm() {
   int armStep = storeArmStep;
   //use calibrated defaults for starting position
   int rightArmPos[] = {rightArmPosDefault[0], rightArmPosDefault[1], rightArmPosDefault[2]};
@@ -701,10 +797,8 @@ void moveRightArm () {
   }                  
 } 
 
-storeStep = 20;
-panTiltTimer = 100;
-void movePanTilt () {
-  int step = storeStep;
+void movePanTilt() {
+  int step = storePanTiltStep;
   //use calibrated defaults for starting position
   int panTiltPos[] = {panTiltDefault[0], panTiltDefault[1]};
 
