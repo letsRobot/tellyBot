@@ -40,7 +40,7 @@ void moveLeftArm();
 void moveRightArm();
 void movePanTilt();
 
-#define LED_PIN     8
+#define LED_PIN     21
 #define LED_COUNT   18
 ws2812 *led_driver;
 int ticks_per_ms;
@@ -110,7 +110,7 @@ int motorB[] = { -14, 12,  5,  2,  14,   2, -5, -12,  4, -4, 0};
 int motorC[] = {  14, -2,  6, 12, -14, -12, -6,   2,  4, -4, 0};
 
 //General Speed Controls
-int defaultStraightSpeed = 150;
+int defaultStraightSpeed = 200;
 int defaultTurnSpeed = 200;
 
 int pingDistance;
@@ -122,16 +122,16 @@ int armIndex = 3; //The size of the left / right arm array
 
 //Left Arm Values
 int leftArm[] =            {   11,   10,    9 }; //servos
-int leftArmPosDefault[] =  {  900,  990,  950 }; //calibrated to center postion
-int leftArmMin[] =         {  200,  200,  200 }; 
-int leftArmMax[] =         { 1600, 1600, 1600 }; 
+int leftArmPosDefault[] =  {  400,  600, 1400 }; //calibrated to center postion
+int leftArmMin[] =         {    0,    0,    0 }; 
+int leftArmMax[] =         { 1800, 1800, 1800 }; 
 int leftArmFlags[] =       {    0,    0,    0 }; //0: Do nothing, 1: move forward, 2: move backward
                                                  //Leave default flag values at 0
 //Right Arm Values
 int rightArm[] =           {   16,   18,   17 };
-int rightArmPosDefault[] = {  990,  990,  900 };
-int rightArmMin[] =        {  200,  200,  200 }; 
-int rightArmMax[] =        { 1600, 1600, 1600 }; 
+int rightArmPosDefault[] = { 2000, 1700,  200 };
+int rightArmMin[] =        {    0,    0,    0 }; 
+int rightArmMax[] =        { 2000, 1800, 1800 }; 
 int rightArmFlags[] =      {    0,    0,    0 };
   
 //pan and tilt values
@@ -144,6 +144,8 @@ int panTiltMin[] =         {  100,  100 };
 int panTiltMax[] =         { 1700, 1700 };
 int panTiltFlags[] =       {    0,    0 }; 
 int panTiltState = 0; //reserved to override default behavior
+
+int centerPanTilt = 0;
 
 
 
@@ -320,27 +322,29 @@ int main()
                     }  
                     
                     //LEFT ARM
-                    if (strcmp(inputString, "i") == 0) {  leftArmFlags[0] = 1;  }
-                    if (strcmp(inputString, "h") == 0) {  leftArmFlags[0] = 2;  }
-                    if (strcmp(inputString, "j") == 0) {  leftArmFlags[1] = 1;  }
-                    if (strcmp(inputString, "k") == 0) {  leftArmFlags[1] = 2;  } 
-                    if (strcmp(inputString, "m") == 0) {  leftArmFlags[2] = 1;  }
-                    if (strcmp(inputString, "n") == 0) {  leftArmFlags[2] = 2;  }     
+                    if (strcmp(inputString, "g") == 0) {  leftArmFlags[0] = 1;  }
+                    if (strcmp(inputString, "o") == 0) {  leftArmFlags[0] = 2;  }
+                    if (strcmp(inputString, "y") == 0) {  leftArmFlags[1] = 1;  }
+                    if (strcmp(inputString, "u") == 0) {  leftArmFlags[1] = 2;  } 
+                    if (strcmp(inputString, "v") == 0) {  leftArmFlags[2] = 1;  }
+                    if (strcmp(inputString, "w") == 0) {  leftArmFlags[2] = 2;  }     
                     
                     
                     //RIGHT ARM
-                    if (strcmp(inputString, "g") == 0) {  rightArmFlags[0] = 1; }  
-                    if (strcmp(inputString, "o") == 0) {  rightArmFlags[0] = 2; } 
-                    if (strcmp(inputString, "y") == 0) {  rightArmFlags[1] = 1; }  
-                    if (strcmp(inputString, "u") == 0) {  rightArmFlags[1] = 2; } 
-                    if (strcmp(inputString, "v") == 0) {  rightArmFlags[2] = 1; }  
-                    if (strcmp(inputString, "w") == 0) {  rightArmFlags[2] = 2; }     
+                    if (strcmp(inputString, "i") == 0) {  rightArmFlags[0] = 1; }  
+                    if (strcmp(inputString, "h") == 0) {  rightArmFlags[0] = 2; } 
+                    if (strcmp(inputString, "j") == 0) {  rightArmFlags[1] = 1; }  
+                    if (strcmp(inputString, "k") == 0) {  rightArmFlags[1] = 2; } 
+                    if (strcmp(inputString, "m") == 0) {  rightArmFlags[2] = 1; }  
+                    if (strcmp(inputString, "n") == 0) {  rightArmFlags[2] = 2; }     
                     
                     //PAN AND TILT
                     if (strcmp(inputString, "pp") == 0) { panTiltFlags[0] = 1;  }  
                     if (strcmp(inputString, "pm") == 0) { panTiltFlags[0] = 2;  }  
                     if (strcmp(inputString, "tp") == 0) { panTiltFlags[1] = 1;  }  
                     if (strcmp(inputString, "tm") == 0) { panTiltFlags[1] = 2;  } 
+                    
+                    if (strcmp(inputString, "center") == 0) { centerPanTilt = 1;  }
             
 #endif
             
@@ -778,8 +782,20 @@ void moveArmsAndPanTilt()
 
   while(1)
   {
+    
+    //Center PanTilt
+    if (centerPanTilt == 1) {
+      for (int i = 0; i < panTiltIndex; i++) {
+        panTiltPos[i] = panTiltDefault[i];
+        panTiltFlags[i] = 1;
+       }
+      centerPanTilt = 0;       
+      }
+    
+    
     for (int i = 0; i < panTiltIndex; i++)
     {
+
        if (panTiltFlags[i] != 0 )
        {
          if (panTiltFlags[i] == 2 )
