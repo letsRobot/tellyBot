@@ -1,12 +1,15 @@
 // ParallaxBot.c
 //
 
-// comment this line out to switch the StandardBot instead of TriBot
 #define STANDARD_BOT    0
 #define TRI_BOT         1
 
+// Edit these lines to configure your bot
+//
 #define CONFIGURED_BOT  TRI_BOT
 #define LED_PIN         21
+//
+// End of configuration lines
 
 #include "simpletools.h"
 #include "fdserial.h"
