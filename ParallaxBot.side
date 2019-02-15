@@ -1,4 +1,10 @@
 ParallaxBot.c
+EyesWS2812.c
+EyesWS2812.h
+StandardBot.c
+StandardBot.h
+TriBot.c
+TriBot.h
 telly.c
 >compiler=C
 >memtype=cmm main ram compact
