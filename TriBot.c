@@ -32,15 +32,15 @@ int armTimer = 100;
 int armIndex = 3; //The size of the left / right arm array
 
 //Left Arm Values
-int leftArm[] =            {   11,   10,    9 }; //servos
-int leftArmPosDefault[] =  {  400,  600, 1400 }; //calibrated to center postion
+int leftArm[] =            {   10,   11,    9 }; //servos
+int leftArmPosDefault[] =  { 1100, 1500,  900 }; //calibrated to center postion
 int leftArmMin[] =         {    0,    0,    0 };
 int leftArmMax[] =         { 1800, 1800, 1800 };
 int leftArmFlags[] =       {    0,    0,    0 }; //0: Do nothing, 1: move forward, 2: move backward
                                                  //Leave default flag values at 0
 //Right Arm Values
 int rightArm[] =           {   16,   18,   17 };
-int rightArmPosDefault[] = { 2000, 1700,  200 };
+int rightArmPosDefault[] = {  800,    0,  1000 };
 int rightArmMin[] =        {    0,    0,    0 };
 int rightArmMax[] =        { 2000, 1800, 1800 };
 int rightArmFlags[] =      {    0,    0,    0 };
