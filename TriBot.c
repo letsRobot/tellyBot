@@ -58,6 +58,8 @@ int panTiltState = 0; //reserved to override default behavior
 
 int centerPanTilt = 0;
 
+int pivotFlag = 0;
+
 /*
 Character Assignments for key commands
 
@@ -271,52 +273,52 @@ void StartTriBotController()
 
 void HandleTriBotCommands(const char* inputString, fdserial *term)
 {
-    if (strcmp(inputString, "l") == 0)
+    if (strcmp(inputString, "l") == 0 )
     {
         dprint(term, "left");
         set_triBot(9);
     }
-    if (strcmp(inputString, "r") == 0)
+    if (strcmp(inputString, "r") == 0 )
     {
         dprint(term, "right");
         set_triBot(8);
     }
-    if (strcmp(inputString, "f") == 0)
+    if (strcmp(inputString, "f") == 0 && pivotFlag == 0)
     {
         dprint(term, "forward");
         set_triBot(0);
     }
-    if (strcmp(inputString, "b") == 0)
+    if (strcmp(inputString, "b") == 0 && pivotFlag == 0)
     {
         dprint(term, "back");
         set_triBot(4);
     }
-    if (strcmp(inputString, "a") == 0)
+    if (strcmp(inputString, "a") == 0 && pivotFlag == 0)
     {
         dprint(term, "slide left");
         set_triBot(6);
     }
-    if (strcmp(inputString, "d") == 0)
+    if (strcmp(inputString, "d") == 0 && pivotFlag == 0)
     {
         dprint(term, "slide right");
         set_triBot(2);
     }
-    if (strcmp(inputString, "e") == 0)
+    if (strcmp(inputString, "e") == 0 && pivotFlag == 0)
     {
         dprint(term, "forward-right");
         set_triBot(3);
     }
-    if (strcmp(inputString, "q") == 0)
+    if (strcmp(inputString, "q") == 0 && pivotFlag == 0)
     {
         dprint(term, "forward-left");
         set_triBot(7);
     }
-    if (strcmp(inputString, "c") == 0)
+    if (strcmp(inputString, "c") == 0 && pivotFlag == 0)
     {
         dprint(term, "backward-right");
         set_triBot(1);
     }
-    if (strcmp(inputString, "z") == 0)
+    if (strcmp(inputString, "z") == 0 && pivotFlag == 0)
     {
         dprint(term, "backward-left");
         set_triBot(5);
@@ -331,29 +333,37 @@ void HandleTriBotCommands(const char* inputString, fdserial *term)
         dprint(term, "stop with motors off");
         set_triBot(11);
     }
+    
+    if (strcmp(inputString, "pivot") == 0) { 
+      if ( pivotFlag == 0 ) {
+          pivotFlag=1;      
+        } else if (pivotFlag == 1) {
+          pivotFlag=0;
+          }        
+      }
 
     //LEFT ARM
-    if (strcmp(inputString, "g") == 0) {  leftArmFlags[0] = 1;  }
-    if (strcmp(inputString, "o") == 0) {  leftArmFlags[0] = 2;  }
-    if (strcmp(inputString, "y") == 0) {  leftArmFlags[1] = 1;  }
-    if (strcmp(inputString, "u") == 0) {  leftArmFlags[1] = 2;  }
-    if (strcmp(inputString, "v") == 0) {  leftArmFlags[2] = 1;  }
-    if (strcmp(inputString, "w") == 0) {  leftArmFlags[2] = 2;  }
+    if (strcmp(inputString, "i") == 0) {  leftArmFlags[0] = 1;  }
+    if (strcmp(inputString, "h") == 0) {  leftArmFlags[0] = 2;  }
+    if (strcmp(inputString, "j") == 0) {  leftArmFlags[1] = 1;  }
+    if (strcmp(inputString, "k") == 0) {  leftArmFlags[1] = 2;  }
+    if (strcmp(inputString, "m") == 0) {  leftArmFlags[2] = 1;  }
+    if (strcmp(inputString, "n") == 0) {  leftArmFlags[2] = 2;  }
 
 
     //RIGHT ARM
-    if (strcmp(inputString, "i") == 0) {  rightArmFlags[0] = 1; }
-    if (strcmp(inputString, "h") == 0) {  rightArmFlags[0] = 2; }
-    if (strcmp(inputString, "j") == 0) {  rightArmFlags[1] = 1; }
-    if (strcmp(inputString, "k") == 0) {  rightArmFlags[1] = 2; }
-    if (strcmp(inputString, "m") == 0) {  rightArmFlags[2] = 1; }
-    if (strcmp(inputString, "n") == 0) {  rightArmFlags[2] = 2; }
+    if (strcmp(inputString, "g") == 0) {  rightArmFlags[0] = 1; }
+    if (strcmp(inputString, "o") == 0) {  rightArmFlags[0] = 2; }
+    if (strcmp(inputString, "y") == 0) {  rightArmFlags[1] = 1; }
+    if (strcmp(inputString, "u") == 0) {  rightArmFlags[1] = 2; }
+    if (strcmp(inputString, "v") == 0) {  rightArmFlags[2] = 1; }
+    if (strcmp(inputString, "w") == 0) {  rightArmFlags[2] = 2; }
 
     //PAN AND TILT
-    if (strcmp(inputString, "pp") == 0) { panTiltFlags[0] = 1;  }
-    if (strcmp(inputString, "pm") == 0) { panTiltFlags[0] = 2;  }
-    if (strcmp(inputString, "tp") == 0) { panTiltFlags[1] = 1;  }
-    if (strcmp(inputString, "tm") == 0) { panTiltFlags[1] = 2;  }
+    if (strcmp(inputString, "pm") == 0) { panTiltFlags[0] = 1;  }
+    if (strcmp(inputString, "pp") == 0) { panTiltFlags[0] = 2;  }
+    if (strcmp(inputString, "tm") == 0) { panTiltFlags[1] = 1;  }
+    if (strcmp(inputString, "tp") == 0) { panTiltFlags[1] = 2;  }
 
     if (strcmp(inputString, "center") == 0) { centerPanTilt = 1;  }
 }
