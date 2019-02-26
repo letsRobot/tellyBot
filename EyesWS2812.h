@@ -1,12 +1,12 @@
-// Eyes.h
+// EyesWS2812.h
 //
 
-#ifndef _EYES_H_
-#define _EYES_H_
+#ifndef _EYESWS2812_H_
+#define _EYESWS2812_H_
 
 #include "fdserial.h"
 
-void StartEyesHandler(int pin);
-void HandleEyeCommands(const char* inputString, fdserial* term);
+void StartEyesWS2812Handler(int pin);
+void HandleEyeWS2812Commands(const char* inputString, fdserial* term);
 
-#endif // _EYES_H_
+#endif // _EYESWS2812_H_

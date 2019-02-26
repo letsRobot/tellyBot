@@ -1,5 +1,9 @@
-// Eyes.c
+// EyesWS2812.c
 //
+#include "BotConfig.h"
+
+#if (CONFIGURED_EYES == EYES_WS2812)
+
 #include "simpletools.h"
 #include "fdserial.h"
 #include "ws2812.h"
@@ -201,7 +205,7 @@ void handle_eyes()
     }
 }
 
-void StartEyesHandler(int pin)
+void StartEyesWS2812Handler(int pin)
 {
     _eyesLedPin = pin;
 
@@ -218,7 +222,7 @@ void StartEyesHandler(int pin)
     update_eyes = EYES_BLINK;   
 }    
 
-void HandleEyeCommands(const char* inputString, fdserial* term)
+void HandleEyeWS2812Commands(const char* inputString, fdserial* term)
 {
     if (strcmp(inputString, "brightness_up") == 0)
     {
@@ -348,3 +352,4 @@ void HandleEyeCommands(const char* inputString, fdserial* term)
     }                   
 }
 
+#endif // (CONFIGURED_EYES == EYES_WS2812)

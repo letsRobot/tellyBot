@@ -1,4 +1,7 @@
 // Tribot.c
+#include "BotConfig.h"
+
+#if (CONFIGURED_BOT == TRI_BOT)
 
 //#define USING_360_SERVOS
 
@@ -23,8 +26,8 @@ int motorB[] = { -14, 12,  5,  2,  14,   2, -5, -12,  4, -4, 0};
 int motorC[] = {  14, -2,  6, 12, -14, -12, -6,   2,  4, -4, 0};
 
 //General Speed Controls
-int defaultStraightSpeed = 200;
-int defaultTurnSpeed = 200;
+int defaultStraightSpeed = DEFAULT_STRAIGHT_SPEED;
+int defaultTurnSpeed = DEFAULT_TURN_SPEED;
 
 //ARMS (3-Axis)
 int storeArmStep = 20;
@@ -368,3 +371,4 @@ void HandleTriBotCommands(const char* inputString, fdserial *term)
     if (strcmp(inputString, "center") == 0) { centerPanTilt = 1;  }
 }
 
+#endif // (CONFIGURED_BOT == TRI_BOT)

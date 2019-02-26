@@ -1,4 +1,7 @@
 // StandardBot.c
+#include "BotConfig.h"
+
+#if (CONFIGURED_BOT == STANDARD_BOT)
 
 //#define USING_360_SERVOS
 
@@ -12,8 +15,8 @@
 #include "abdrive360.h"
 
 // General Speed Controls
-int _standardBotDefaultStraightSpeed = 200;
-int _standardBotDefaultTurnSpeed = 200;
+int _standardBotDefaultStraightSpeed = DEFAULT_STRAIGHT_SPEED;
+int _standardBotDefaultTurnSpeed = DEFAULT_TURN_SPEED;
 
 // used to communicate to the motor_controller in another core
 volatile int _standard_bot_current_leftspd = 0;
@@ -122,3 +125,4 @@ void HandleStandardBotCommands(const char* inputString, fdserial *term)
     }
 }
 
+#endif // (CONFIGURED_BOT == STANDARD_BOT)

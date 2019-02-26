@@ -1,49 +1,59 @@
 // ParallaxBot.c
 //
 
-#define STANDARD_BOT    0
-#define TRI_BOT         1
-
-// Edit these lines to configure your bot
-//
-#define CONFIGURED_BOT  TRI_BOT
-#define LED_PIN         21
-//
-// End of configuration lines
+#include "BotConfig.h"
 
 #include "simpletools.h"
 #include "fdserial.h"
 
+#if (CONFIGURED_BOT == TRI_BOT)
 #include "TriBot.h"
+#else
 #include "StandardBot.h"
+#endif
+
+#if (CONFIGURED_EYES == EYES_WS2812)
 #include "EyesWS2812.h"
+#else
+#include "EyesAPA102.h"
+#endif
 
 fdserial *term; //enables full-duplex serial communication of the terminal (In other words, 2 way signals between the computer and the robot)
-int botType;
 
 void StartBotController(int type)
 {
-    botType = type;
-    if ( botType == STANDARD_BOT )
-    {
-        StartStandardBotController();
-    }
-    else if ( botType == TRI_BOT )
-    {
-        StartTriBotController();
-    }
+#if (CONFIGURED_BOT == TRI_BOT)
+    StartTriBotController();
+#else
+    StartStandardBotController();
+#endif
 }
 
 void HandleBotCommands(const char* inputString, fdserial *term)
 {
-    if ( botType == STANDARD_BOT )
-    {
-        HandleStandardBotCommands(inputString, term);
-    }
-    else if ( botType == TRI_BOT )
-    {
-        HandleTriBotCommands(inputString, term);
-    }
+#if (CONFIGURED_BOT == TRI_BOT)
+    HandleTriBotCommands(inputString, term);
+#else
+    HandleStandardBotCommands(inputString, term);
+#endif
+}
+
+void StartEyesHandler(int type)
+{
+#if (CONFIGURED_EYES == EYES_WS2812)
+    StartEyesWS2812Handler( LED_DATA_PIN );
+#else
+    StartEyesAPA102Handler( LED_CLOCK_PIN, LED_DATA_PIN );
+#endif
+}    
+
+void HandleEyeCommands(const char* inputString, fdserial *term)
+{
+#if (CONFIGURED_EYES == EYES_WS2812)
+    HandleEyeWS2812Commands(inputString, term);
+#else    
+    HandleEyeAPA102Commands(inputString, term);
+#endif
 }
 
 int main()
@@ -51,11 +61,10 @@ int main()
     // Shutdown the default simpleterm
     simpleterm_close();
     // and start up the full-duplex serial driver for the terminal
-    term = fdserial_open(31, 30, 0, 9600);
+    term = fdserial_open(31, 30, 0, SERIAL_BITRATE);
 
     StartBotController(CONFIGURED_BOT);
-
-    StartEyesHandler(LED_PIN);
+    StartEyesHandler(CONFIGURED_EYES);
 
     char c;  
     int inputStringLength = 64;
@@ -70,15 +79,15 @@ int main()
 
             if (c != -1)
             {
-                dprint(term, "%d", (int)c);
                 if ((int)c == 13 || (int)c == 10)
                 {
-                    dprint(term, "received line:");
+                    dprint(term, "\nreceived line:");
                     dprint(term, inputString);
                     dprint(term, "\n");
                     
                     HandleBotCommands(inputString, term);
                     HandleEyeCommands(inputString, term);
+                    dprint(term, "\n");
                     
                     sPos = 0;
                     inputString[0] = 0; // clear string
@@ -89,8 +98,7 @@ int main()
                     inputString[sPos] = c;
                     sPos += 1;
                     inputString[sPos] = 0; // make sure last element of string is 0
-                    dprint(term, inputString);
-                    dprint(term, " ok \n");
+                    dprint(term, "%c", c);
                 }  
             }            
         }      

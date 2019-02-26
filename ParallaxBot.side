@@ -6,6 +6,12 @@ StandardBot.h
 TriBot.c
 TriBot.h
 telly.c
+EyesAPA102.c
+EyesAPA102.h
+apa102.c
+apa102.h
+emoji.h
+BotConfig.h
 >compiler=C
 >memtype=cmm main ram compact
 >optimize=-Os
