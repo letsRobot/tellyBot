@@ -8,6 +8,7 @@
 #define COLOR(r, g, b)      (((b) << 16) | ((g) << 8) | (r))
 #define SCALE(x, l)         ((x) * (l) / 255)
 #define COLORX(r, g, b, l)  ((SCALE(b, l) << 16) | (SCALE(g, l) << 8) | SCALE(r, l))
+#define RGBTOBGR(x)         (((x) & 0x000000ff) << 16 | ((x) & 0x0000ff00) | ((x) & 0x00ff0000) >> 16);
 
 //                         BBGGRR
 #define COLOR_BLACK      0x000000

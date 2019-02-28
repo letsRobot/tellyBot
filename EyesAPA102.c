@@ -55,19 +55,30 @@ volatile uint8_t eyes_emoji = 0;
 #define B8(d) ((unsigned char)B8__(HEX__(d)))
 
 // masks
-unsigned char smiley[] =
+typedef struct
 {
-    B8(00111100),
-    B8(01000010),
-    B8(10100101),
-    B8(10000001),
-    B8(10100101),
-    B8(10011001),
-    B8(01000010),
-    B8(00111100)
-};    
+    uint8_t index;
+    uint8_t rotation; // 0 = none, 1 = rotate 90, 2 = rotate 180, 3 = rotate 270
+    uint8_t index2;
+    uint8_t rotation2;    
+} maskInfo;
 
-unsigned char masks[4][8] =
+maskInfo maskData[11] =
+{
+    { 0, 0, 0, 0 }, // all on
+    { 1, 0, 1, 0 }, // o.o
+    { 2, 0, 2, 0 }, // -.-
+    { 3, 0, 3, 0 }, // v.v
+    { 3, 2, 3, 2 }, // ^.^
+    { 4, 0, 4, 0 }, // x.x
+    { 5, 0, 5, 1 }, // \./
+    { 6, 0, 6, 0 }, // T.T
+    { 7, 0, 7, 0 }, // u.u
+    { 7, 2, 7, 2 }, // n.n
+    { 8, 0, 8, 0 }  // smiley's
+};    
+    
+uint8_t masks[9][8] =
 {
     {
         B8(11111111),
@@ -102,12 +113,62 @@ unsigned char masks[4][8] =
     {
         B8(00000000),
         B8(00000000),
+        B8(01000010),
+        B8(01100110),
+        B8(01111110),
+        B8(00111100),
         B8(00011000),
+        B8(00000000)
+    },
+    {
+        B8(10000001),
+        B8(11000011),
+        B8(01100110),
+        B8(00111100),
         B8(00111100),
         B8(01100110),
-        B8(01000010),
+        B8(11000011),
+        B8(10000001)
+    },
+    {
+        B8(01000000),
+        B8(01100000),
+        B8(01110000),
+        B8(00111000),
+        B8(00011100),
+        B8(00001110),
+        B8(00000110),
+        B8(00000010)
+    },
+    {
         B8(00000000),
+        B8(01111110),
+        B8(01111110),
+        B8(00011000),
+        B8(00011000),
+        B8(00011000),
+        B8(00011000),
         B8(00000000)
+    },
+    {
+        B8(00000000),
+        B8(01100110),
+        B8(01100110),
+        B8(01100110),
+        B8(01100110),
+        B8(01111110),
+        B8(00111100),
+        B8(00000000)
+    },
+    {
+        B8(00111100),
+        B8(01000010),
+        B8(10100101),
+        B8(10000001),
+        B8(10100101),
+        B8(10011001),
+        B8(01000010),
+        B8(00111100)
     }
 };        
 
@@ -174,40 +235,44 @@ void emojiDraw(int whichEmoji, int whichEye)
 }
 #endif
 
-// whichEye = 0 for first, 1 for second, 2 for both
-void maskDraw(uint8_t mask[8], uint32_t color, uint32_t bgColor, int whichEye)
+void maskDraw(maskInfo maskData, uint32_t color, uint32_t bgColor)
 {
     uint32_t upper8bits = (0xE0 + brightness_apa102) << 24;
+    uint8_t* mask = masks[maskData.index];
+    uint8_t* mask2 = masks[maskData.index2];
     
     for ( int i = 0; i < 8; i++ )
     {
         for ( int j = 0; j < 8; j++ )
         {
             int x = ( ( 7 - i ) * 8 ) + j;
-            if ( ( mask[i] >> ( 7 - j ) ) & 1 )
+            
+            // first eye
+            int ii = ( maskData.rotation == 0 || maskData.rotation == 1 ) ? i : 7 - i;
+            int jj = ( maskData.rotation == 0 || maskData.rotation == 2 ) ? j : 7 - j;
+            if ( ( mask[ii] >> ( 7 - jj ) ) & 1 )
             {
-                if ( whichEye == 0 || whichEye == 2 )
-                {
-                    LEDs[      x ] = upper8bits | color;
-                }
-                if ( whichEye == 1 || whichEye == 2 )
-                {
-                    LEDs[ 64 + x ] = upper8bits | color;
-                }
+                LEDs[ x ] = upper8bits | color;
             }
             else
             {
-                if ( whichEye == 0 || whichEye == 2 )
-                {
-                    LEDs[      x ] = upper8bits | bgColor;
-                }
-                if ( whichEye == 1 || whichEye == 2 )
-                {
-                    LEDs[ 64 + x ] = upper8bits | bgColor;
-                }
-            }                                
-        }            
-    }        
+                LEDs[ x ] = upper8bits | bgColor;
+            }
+            
+            // second eye
+            ii = ( maskData.rotation2 == 0 || maskData.rotation2 == 1 ) ? i : 7 - i;
+            jj = ( maskData.rotation2 == 0 || maskData.rotation2 == 2 ) ? j : 7 - j;
+            if ( ( mask2[ii] >> ( 7 - jj ) ) & 1 )
+            {
+                LEDs[ 64 + x ] = upper8bits | color;
+            }
+            else
+            {
+                LEDs[ 64 + x ] = upper8bits | bgColor;
+            }
+        }
+    }
+
     SendLeds( LEDs, NUM_LEDS );
 }    
 
@@ -231,11 +296,11 @@ void setSingle( uint8_t led, uint32_t color )
 
 void eyes_blink_apa102()
 {
-    maskDraw(masks[current_mask_apa102], mask_color_apa102, mask_bg_color_apa102, 2);
+    maskDraw(maskData[current_mask_apa102], mask_color_apa102, mask_bg_color_apa102);
     pause(500);
-    maskDraw(masks[2], mask_color_apa102, mask_bg_color_apa102, 2);
+    maskDraw(maskData[2], mask_color_apa102, mask_bg_color_apa102);
     pause(500);
-    maskDraw(masks[current_mask_apa102], mask_color_apa102, mask_bg_color_apa102, 2);
+    maskDraw(maskData[current_mask_apa102], mask_color_apa102, mask_bg_color_apa102);
     pause(1);
 }
 
@@ -266,7 +331,7 @@ void handle_eyes_apa102()
                     {
                         brightness_apa102 = 31;
                     }                        
-                    maskDraw(masks[current_mask_apa102], mask_color_apa102, mask_bg_color_apa102, 2);
+                    maskDraw(maskData[current_mask_apa102], mask_color_apa102, mask_bg_color_apa102);
                     break;
                 case EYES_DECREASE_BRIGHTNESS:
                     brightness_apa102--;
@@ -274,7 +339,7 @@ void handle_eyes_apa102()
                     {
                         brightness_apa102 = 1;
                     }                        
-                    maskDraw(masks[current_mask_apa102], mask_color_apa102, mask_bg_color_apa102, 2);
+                    maskDraw(maskData[current_mask_apa102], mask_color_apa102, mask_bg_color_apa102);
                     break;
                 case EYES_SET_COLOR_SINGLE_PIXEL:
                     setSingle(pixel_apa102, pixel_color_apa102);
@@ -284,7 +349,7 @@ void handle_eyes_apa102()
                     break;
                 case EYES_SET_MASK:
                     current_mask_apa102 = update_mask_apa102;
-                    maskDraw(masks[current_mask_apa102], mask_color_apa102, mask_bg_color_apa102, 2);
+                    maskDraw(maskData[current_mask_apa102], mask_color_apa102, mask_bg_color_apa102);
                     break;
 #ifdef ENABLE_EMOJI
                 case EYES_EMOJI:
@@ -349,7 +414,6 @@ void HandleEyeAPA102Commands(const char* inputString, fdserial* term)
         update_mask_apa102 = 3;
         update_eyes_apa102 = EYES_SET_MASK;
     }
-#if 0 // not available yet      
     if (strcmp(inputString, "ms4") == 0)
     {
         dprint(term,"mask 4");
@@ -367,10 +431,11 @@ void HandleEyeAPA102Commands(const char* inputString, fdserial* term)
     if (strcmp(inputString, "ms6") == 0)
     {
         dprint(term,"mask 6");
-        update_mask = 6;
-        update_eyes = EYES_SET_MASK;
+        update_mask_apa102 = 6;
+        mask_color_apa102 = COLOR_RED;
+        update_eyes_apa102 = EYES_SET_MASK;
     }
-    
+
     if (strcmp(inputString, "ms7") == 0)
     {
         dprint(term,"mask 7");
@@ -391,7 +456,14 @@ void HandleEyeAPA102Commands(const char* inputString, fdserial* term)
         update_mask_apa102 = 9;
         update_eyes_apa102 = EYES_SET_MASK;
     }
-#endif    
+
+    if (strcmp(inputString, "ms10") == 0)
+    {
+        dprint(term,"mask 10");
+        update_mask_apa102 = 10;
+        update_eyes_apa102 = EYES_SET_MASK;
+    }
+
     if (strcmp(inputString, "blink") == 0)
     {
         dprint(term,"blink");
@@ -403,6 +475,7 @@ void HandleEyeAPA102Commands(const char* inputString, fdserial* term)
         const char* pBeg = &inputString[0];
         char* pEnd;
         mask_color_apa102 = strtol(pBeg+4, &pEnd,16);
+        mask_color_apa102 = RGBTOBGR(mask_color_apa102);
         if (mask_color_apa102 > 0xFFFFFF)
         {
             mask_color_apa102 = 0xFFFFFF;
@@ -417,6 +490,7 @@ void HandleEyeAPA102Commands(const char* inputString, fdserial* term)
         const char* pBeg = &inputString[0];
         char* pEnd;
         mask_bg_color_apa102 = strtol(pBeg+4, &pEnd,16);
+        mask_bg_color_apa102 = RGBTOBGR(mask_bg_color_apa102);
         if (mask_bg_color_apa102 > 0xFFFFFF)
         {
             mask_bg_color_apa102 = 0xFFFFFF;
@@ -432,6 +506,7 @@ void HandleEyeAPA102Commands(const char* inputString, fdserial* term)
         char* pEnd;
         pixel_apa102 = strtol(pBeg+4, &pEnd,10);
         pixel_color_apa102 = strtol(pEnd, &pEnd,16);
+        pixel_color_apa102 = RGBTOBGR(pixel_color_apa102);
         dprint(term,"%d\n",pixel_color_apa102);
         if ((pixel_apa102 < NUM_LEDS)&&(pixel_color_apa102<=0xFFFFFF))
         {
@@ -444,6 +519,7 @@ void HandleEyeAPA102Commands(const char* inputString, fdserial* term)
         const char* pBeg = &inputString[0];
         char* pEnd;
         pixel_color_apa102 = strtol(pBeg+5, &pEnd,16);
+        pixel_color_apa102 = RGBTOBGR(pixel_color_apa102);
         dprint(term,"%d\n",pixel_color_apa102);
         if (pixel_color_apa102<=0xFFFFFF)
         {
