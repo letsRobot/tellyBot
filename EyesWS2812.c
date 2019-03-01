@@ -332,7 +332,7 @@ void HandleEyeWS2812Commands(const char* inputString, fdserial* term)
         char* pEnd;
         pixel = strtol(pBeg+4, &pEnd,10);
         pixel_color = strtol(pEnd, &pEnd,16);
-        dprint(term,"%d\n",pixel_color);
+        dprint(term,"%d",pixel_color);
         if ((pixel < LED_COUNT)&&(pixel_color<=0xFFFFFF))
         {
             update_eyes = EYES_SET_COLOR_SINGLE_PIXEL;
@@ -344,7 +344,7 @@ void HandleEyeWS2812Commands(const char* inputString, fdserial* term)
         const char* pBeg = &inputString[0];
         char* pEnd;
         pixel_color = strtol(pBeg+5, &pEnd,16);
-        dprint(term,"%d\n",pixel_color);
+        dprint(term,"%d",pixel_color);
         if (pixel_color<=0xFFFFFF)
         {
             update_eyes = EYES_SET_COLOR_ALL_PIXELS;

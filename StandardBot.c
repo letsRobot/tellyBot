@@ -123,6 +123,28 @@ void HandleStandardBotCommands(const char* inputString, fdserial *term)
         dprint(term, "back_stop");
         Stop();
     }
+    
+    if (strncmp(inputString, "speed", 5) == 0) 
+    { 
+        const char* pBeg = &inputString[0];
+        char* pEnd;
+        int new_speed = strtol(pBeg+6, &pEnd,10);
+        if ( new_speed < 10 ) new_speed = 10;
+        if ( new_speed > 200 ) new_speed = 200;
+        _standardBotDefaultStraightSpeed = new_speed;
+        dprint(term,"straight speed set to %d", new_speed);
+    }
+    
+    if (strncmp(inputString, "turnspeed", 9) == 0) 
+    { 
+        const char* pBeg = &inputString[0];
+        char* pEnd;
+        int new_speed = strtol(pBeg+10, &pEnd,10);
+        if ( new_speed < 10 ) new_speed = 10;
+        if ( new_speed > 200 ) new_speed = 200;
+        _standardBotDefaultTurnSpeed = new_speed;
+        dprint(term,"turn speed set to %d", new_speed);
+    }
 }
 
 #endif // (CONFIGURED_BOT == STANDARD_BOT)

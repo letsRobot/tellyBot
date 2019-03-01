@@ -27,7 +27,9 @@ volatile uint32_t mask_bg_color_apa102 = COLOR_BLACK;
 volatile uint8_t pixel_apa102 = 0;
 volatile uint32_t pixel_color_apa102 = 0xFFFFFF;
 volatile uint32_t eye_color_apa102 = 0xFFFFFF;
+#ifdef ENABLE_EMOJI
 volatile uint8_t eyes_emoji = 0;
+#endif
 
 #define EYES_BLINK 1
 #define EYES_INCREASE_BRIGHTNESS 2
@@ -35,9 +37,9 @@ volatile uint8_t eyes_emoji = 0;
 #define EYES_SET_COLOR_SINGLE_PIXEL 4
 #define EYES_SET_COLOR_ALL_PIXELS 5
 #define EYES_SET_MASK 6
-
+#define EYES_DO_COP 7
 #ifdef ENABLE_EMOJI
-#define EYES_EMOJI 7
+#define EYES_EMOJI 8
 #endif
 
 /* Helper macros */
@@ -58,7 +60,7 @@ volatile uint8_t eyes_emoji = 0;
 typedef struct
 {
     uint8_t index;
-    uint8_t rotation; // 0 = none, 1 = rotate 90, 2 = rotate 180, 3 = rotate 270
+    uint8_t rotation; // 0 = none, 1 = flip x, 2 = flip y, 3 = flip both x and y
     uint8_t index2;
     uint8_t rotation2;    
 } maskInfo;
@@ -71,7 +73,7 @@ maskInfo maskData[11] =
     { 3, 0, 3, 0 }, // v.v
     { 3, 2, 3, 2 }, // ^.^
     { 4, 0, 4, 0 }, // x.x
-    { 5, 0, 5, 1 }, // \./
+    { 5, 0, 5, 2 }, // \./
     { 6, 0, 6, 0 }, // T.T
     { 7, 0, 7, 0 }, // u.u
     { 7, 2, 7, 2 }, // n.n
@@ -304,6 +306,35 @@ void eyes_blink_apa102()
     pause(1);
 }
 
+void eyes_cop_apa102()
+{
+    uint32_t upper8bits = (0xE0 + brightness_apa102) << 24;
+    for (int a=0; a <= 5; ++a)
+    {
+        for ( int i = 0; i < NUM_LEDS/2; i++ )
+        {
+            LEDs[i] = upper8bits | 0xff0000;
+        }
+        for ( int i = NUM_LEDS/2; i < NUM_LEDS; i++ )
+        {
+            LEDs[i] = upper8bits | 0x0000ff;
+        }
+        SendLeds( LEDs, NUM_LEDS );
+        pause(400);
+        for ( int i = 0; i < NUM_LEDS/2; i++ )
+        {
+            LEDs[i] = upper8bits | 0x0000ff;
+        }
+        for ( int i = NUM_LEDS/2; i < NUM_LEDS; i++ )
+        {
+            LEDs[i] = upper8bits | 0xff0000;
+        }
+        SendLeds( LEDs, NUM_LEDS );
+        pause(400);
+    }
+    maskDraw(maskData[current_mask_apa102], mask_color_apa102, mask_bg_color_apa102);
+}
+
 volatile int _apa102ClkPin = 0;
 volatile int _apa102DataPin = 0;
 void handle_eyes_apa102()
@@ -351,6 +382,9 @@ void handle_eyes_apa102()
                     current_mask_apa102 = update_mask_apa102;
                     maskDraw(maskData[current_mask_apa102], mask_color_apa102, mask_bg_color_apa102);
                     break;
+			 case EYES_DO_COP:
+                    eyes_cop_apa102();
+                    break;
 #ifdef ENABLE_EMOJI
                 case EYES_EMOJI:
                     emojiDraw(eyes_emoji, 2);
@@ -371,8 +405,8 @@ void StartEyesAPA102Handler(int clockPin, int dataPin)
     
     pause(250);
     update_eyes_apa102 = EYES_BLINK;   
-}    
-
+}
+    
 void HandleEyeAPA102Commands(const char* inputString, fdserial* term)
 {
     if (strcmp(inputString, "brightness_up") == 0)
@@ -469,7 +503,11 @@ void HandleEyeAPA102Commands(const char* inputString, fdserial* term)
         dprint(term,"blink");
         update_eyes_apa102 = EYES_BLINK;
     }
-
+    if (strcmp(inputString, "cop") == 0)
+    {
+        dprint(term,"cop");
+        update_eyes_apa102 = EYES_DO_COP;
+    }
     if (strncmp(inputString, "mfg",3) == 0) 
     { 
         const char* pBeg = &inputString[0];
@@ -480,7 +518,7 @@ void HandleEyeAPA102Commands(const char* inputString, fdserial* term)
         {
             mask_color_apa102 = 0xFFFFFF;
         }
-        dprint(term,"%d\n",mask_color_apa102);
+        dprint(term,"%d",mask_color_apa102);
         update_mask_apa102 = current_mask_apa102;
         update_eyes_apa102 = EYES_SET_MASK;
     }                   
@@ -495,7 +533,7 @@ void HandleEyeAPA102Commands(const char* inputString, fdserial* term)
         {
             mask_bg_color_apa102 = 0xFFFFFF;
         }
-        dprint(term,"%d\n",mask_bg_color_apa102);
+        dprint(term,"%d",mask_bg_color_apa102);
         update_mask_apa102 = current_mask_apa102;
         update_eyes_apa102 = EYES_SET_MASK;
     }                   
@@ -507,7 +545,7 @@ void HandleEyeAPA102Commands(const char* inputString, fdserial* term)
         pixel_apa102 = strtol(pBeg+4, &pEnd,10);
         pixel_color_apa102 = strtol(pEnd, &pEnd,16);
         pixel_color_apa102 = RGBTOBGR(pixel_color_apa102);
-        dprint(term,"%d\n",pixel_color_apa102);
+        dprint(term,"%d",pixel_color_apa102);
         if ((pixel_apa102 < NUM_LEDS)&&(pixel_color_apa102<=0xFFFFFF))
         {
             update_eyes_apa102 = EYES_SET_COLOR_SINGLE_PIXEL;
@@ -520,7 +558,7 @@ void HandleEyeAPA102Commands(const char* inputString, fdserial* term)
         char* pEnd;
         pixel_color_apa102 = strtol(pBeg+5, &pEnd,16);
         pixel_color_apa102 = RGBTOBGR(pixel_color_apa102);
-        dprint(term,"%d\n",pixel_color_apa102);
+        dprint(term,"%d",pixel_color_apa102);
         if (pixel_color_apa102<=0xFFFFFF)
         {
             update_eyes_apa102 = EYES_SET_COLOR_ALL_PIXELS;
@@ -533,7 +571,7 @@ void HandleEyeAPA102Commands(const char* inputString, fdserial* term)
         const char* pBeg = &inputString[0];
         char* pEnd;
         eyes_emoji = strtol(pBeg+6, &pEnd,10);
-        dprint(term,"emoji %d\n",eyes_emoji);
+        dprint(term,"emoji %d",eyes_emoji);
         if ( eyes_emoji < 100 )
         {
             update_eyes_apa102 = EYES_EMOJI;

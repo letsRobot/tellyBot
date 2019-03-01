@@ -337,13 +337,23 @@ void HandleTriBotCommands(const char* inputString, fdserial *term)
         set_triBot(11);
     }
     
-    if (strcmp(inputString, "pivot") == 0) { 
-      if ( pivotFlag == 0 ) {
-          pivotFlag=1;      
-        } else if (pivotFlag == 1) {
-          pivotFlag=0;
-          }        
-      }
+    if (strcmp(inputString, "pivot") == 0)
+    { 
+        pivotFlag = !pivotFlag;
+        dprint(term, "pivot %s", pivotFlag ? "on" : "off");
+    }
+    
+    if (strncmp(inputString, "speed", 5) == 0) 
+    { 
+        const char* pBeg = &inputString[0];
+        char* pEnd;
+        int new_speed = strtol(pBeg+6, &pEnd,10);
+        if ( new_speed < 10 ) new_speed = 10;
+        if ( new_speed > 200 ) new_speed = 200;
+        defaultStraightSpeed = new_speed;
+        dprint(term,"speed set to %d", new_speed);
+    }
+    
 
     //LEFT ARM
     if (strcmp(inputString, "i") == 0) {  leftArmFlags[0] = 1;  }
