@@ -29,38 +29,6 @@ int motorC[] = {  14, -2,  6, 12, -14, -12, -6,   2,  4, -4, 0};
 int defaultStraightSpeed = DEFAULT_STRAIGHT_SPEED;
 int defaultTurnSpeed = DEFAULT_TURN_SPEED;
 
-//ARMS (3-Axis)
-int storeArmStep = 20;
-int armTimer = 100;
-int armIndex = 3; //The size of the left / right arm array
-
-//Left Arm Values
-int leftArm[] =            {   10,   11,    9 }; //servos
-int leftArmPosDefault[] =  { 1100, 1500,  900 }; //calibrated to center postion
-int leftArmMin[] =         {    0,    0,    0 };
-int leftArmMax[] =         { 1800, 1800, 1800 };
-int leftArmFlags[] =       {    0,    0,    0 }; //0: Do nothing, 1: move forward, 2: move backward
-                                                 //Leave default flag values at 0
-//Right Arm Values
-int rightArm[] =           {   16,   18,   17 };
-int rightArmPosDefault[] = {  800,    0,  1000 };
-int rightArmMin[] =        {    0,    0,    0 };
-int rightArmMax[] =        { 2000, 1800, 1800 };
-int rightArmFlags[] =      {    0,    0,    0 };
-
-//pan and tilt values
-int storePanTiltStep = 20;
-int panTiltTimer = 100;
-int panTiltIndex = 2;
-int panTilt[] =            {   19,   20 };
-int panTiltDefault[] =     {  900,  900 };
-int panTiltMin[] =         {  100,  100 };
-int panTiltMax[] =         { 1700, 1700 };
-int panTiltFlags[] =       {    0,    0 };
-int panTiltState = 0; //reserved to override default behavior
-
-int centerPanTilt = 0;
-
 int pivotFlag = 0;
 
 /*
@@ -148,130 +116,9 @@ void tri_motor_controller()
     }
 }
 
-//Technically, this is more of a servo mover, and i can probably refactor to a more generic system
-
-void moveArmsAndPanTilt()
-{
-    int armStep = storeArmStep;
-
-    int panTiltStep = storePanTiltStep;
-
-    //use calibrated defaults for starting position
-    int panTiltPos[] = {panTiltDefault[0], panTiltDefault[1]};
-
-    //initialize arms into default pose
-    for (int i = 0; i < panTiltIndex; i++)
-    {
-        servo_angle(panTilt[i], panTiltPos[i]);
-    }
-
-    //use calibrated defaults for starting position
-    int leftArmPos[] = {leftArmPosDefault[0], leftArmPosDefault[1], leftArmPosDefault[2]};
-
-    //use calibrated defaults for starting position
-    int rightArmPos[] = {rightArmPosDefault[0], rightArmPosDefault[1], rightArmPosDefault[2]};
-
-    //initialize arms into default pose
-    for (int i = 0; i < armIndex; i++)
-    {
-        servo_angle(rightArm[i], rightArmPos[i]);
-        servo_angle(leftArm[i], leftArmPos[i]);
-    }
-
-    while(1)
-    {
-
-        //Center PanTilt
-        if (centerPanTilt == 1)
-        {
-            for (int i = 0; i < panTiltIndex; i++)
-            {
-                panTiltPos[i] = panTiltDefault[i];
-                panTiltFlags[i] = 1;
-            }
-            centerPanTilt = 0;
-        }
-
-        for (int i = 0; i < panTiltIndex; i++)
-        {
-            if (panTiltFlags[i] != 0 )
-            {
-                if (panTiltFlags[i] == 2 )
-                {
-                    panTiltPos[i] -= panTiltStep;
-                    if (panTiltPos[i] < panTiltMin[i])
-                    {
-                        panTiltPos[i] = panTiltMin[i];
-                    }
-                }
-                else
-                {
-                    panTiltPos[i] += panTiltStep;
-                    if (panTiltPos[i] > panTiltMax[i])
-                    {
-                        panTiltPos[i] = panTiltMax[i];
-                    }
-                }
-                servo_angle(panTilt[i], panTiltPos[i]);
-                pause(panTiltTimer);
-                panTiltFlags[i] = 0;
-            }
-        }
-        for (int i = 0; i < armIndex; i++)
-        {
-            if (leftArmFlags[i] != 0 )
-            {
-                if (leftArmFlags[i] == 2 )
-                {
-                    leftArmPos[i] -= armStep;
-                    if (leftArmPos[i] < leftArmMin[i])
-                    {
-                        leftArmPos[i] = leftArmMin[i];
-                    }
-                }
-                else
-                {
-                    leftArmPos[i] += armStep;
-                    if (leftArmPos[i] > leftArmMax[i])
-                    {
-                        leftArmPos[i] = leftArmMax[i];
-                    }
-                }
-                servo_angle(leftArm[i], leftArmPos[i]);
-                pause(armTimer);
-                leftArmFlags[i] = 0;
-            }
-            if (rightArmFlags[i] != 0 )
-            {
-                if (rightArmFlags[i] == 2 )
-                {
-                    rightArmPos[i] -= armStep;
-                    if (rightArmPos[i] < rightArmMin[i])
-                    {
-                        rightArmPos[i] = rightArmMin[i];
-                    }
-                }
-                else
-                {
-                    rightArmPos[i] += armStep;
-                    if (rightArmPos[i] > rightArmMax[i])
-                    {
-                        rightArmPos[i] = rightArmMax[i];
-                    }
-                }
-                servo_angle(rightArm[i], rightArmPos[i]);
-                pause(armTimer);
-                rightArmFlags[i] = 0;
-            }
-        }
-        pause(10);
-    }
-}
-
 void StartTriBotController()
 {
     cog_run(tri_motor_controller, 128);
-    cog_run(moveArmsAndPanTilt, 128);
 }
 
 void HandleTriBotCommands(const char* inputString, fdserial *term)
@@ -353,32 +200,6 @@ void HandleTriBotCommands(const char* inputString, fdserial *term)
         defaultStraightSpeed = new_speed;
         dprint(term,"speed set to %d", new_speed);
     }
-    
-
-    //LEFT ARM
-    if (strcmp(inputString, "i") == 0) {  leftArmFlags[0] = 1;  }
-    if (strcmp(inputString, "h") == 0) {  leftArmFlags[0] = 2;  }
-    if (strcmp(inputString, "j") == 0) {  leftArmFlags[1] = 1;  }
-    if (strcmp(inputString, "k") == 0) {  leftArmFlags[1] = 2;  }
-    if (strcmp(inputString, "m") == 0) {  leftArmFlags[2] = 1;  }
-    if (strcmp(inputString, "n") == 0) {  leftArmFlags[2] = 2;  }
-
-
-    //RIGHT ARM
-    if (strcmp(inputString, "g") == 0) {  rightArmFlags[0] = 1; }
-    if (strcmp(inputString, "o") == 0) {  rightArmFlags[0] = 2; }
-    if (strcmp(inputString, "y") == 0) {  rightArmFlags[1] = 1; }
-    if (strcmp(inputString, "u") == 0) {  rightArmFlags[1] = 2; }
-    if (strcmp(inputString, "v") == 0) {  rightArmFlags[2] = 1; }
-    if (strcmp(inputString, "w") == 0) {  rightArmFlags[2] = 2; }
-
-    //PAN AND TILT
-    if (strcmp(inputString, "pm") == 0) { panTiltFlags[0] = 1;  }
-    if (strcmp(inputString, "pp") == 0) { panTiltFlags[0] = 2;  }
-    if (strcmp(inputString, "tm") == 0) { panTiltFlags[1] = 1;  }
-    if (strcmp(inputString, "tp") == 0) { panTiltFlags[1] = 2;  }
-
-    if (strcmp(inputString, "center") == 0) { centerPanTilt = 1;  }
 }
 
 #endif // (CONFIGURED_BOT == TRI_BOT)

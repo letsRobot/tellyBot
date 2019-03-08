@@ -12,6 +12,14 @@
 #include "StandardBot.h"
 #endif
 
+#if (CONFIGURED_ACCESSORIES == PAN_TILT_ARMS)
+#include "KitAccessoryServosConfig.h"
+#elif (CONFIGURED_ACCESSORIES == TILT_GRIPPER)
+#include "TiltGripperAccessoryServosConfig.h"
+#else
+#include "DefaultAccessoryServosConfig.h"
+#endif
+
 #if (CONFIGURED_EYES == EYES_WS2812)
 #include "EyesWS2812.h"
 #else
@@ -27,6 +35,8 @@ void StartBotController(int type)
 #else
     StartStandardBotController();
 #endif
+
+    StartAccessoryServosController(&AccessoryServosConfig);
 }
 
 void HandleBotCommands(const char* inputString, fdserial *term)
@@ -36,6 +46,8 @@ void HandleBotCommands(const char* inputString, fdserial *term)
 #else
     HandleStandardBotCommands(inputString, term);
 #endif
+
+    HandleAccessoryServosCommands(inputString, term);
 }
 
 void StartEyesHandler(int type)

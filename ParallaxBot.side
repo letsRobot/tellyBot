@@ -12,6 +12,11 @@ apa102.c
 apa102.h
 emoji.h
 BotConfig.h
+AccessoryServos.h
+AccessoryServos.c
+KitAccessoryServosConfig.h
+DefaultAccessoryServosConfig.h
+TiltGripperAccessoryServosConfig.h
 >compiler=C
 >memtype=cmm main ram compact
 >optimize=-Os

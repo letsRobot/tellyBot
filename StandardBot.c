@@ -3,16 +3,15 @@
 
 #if (CONFIGURED_BOT == STANDARD_BOT)
 
-//#define USING_360_SERVOS
-
 #include "simpletools.h"
 #include "fdserial.h"
 #ifdef USING_360_SERVOS
   #include "servo360.h"
+  #include "abdrive360.h"
 #else
   #include "servo.h"
+  #include "abdrive.h"
 #endif  
-#include "abdrive360.h"
 
 // General Speed Controls
 int _standardBotDefaultStraightSpeed = DEFAULT_STRAIGHT_SPEED;
