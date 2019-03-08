@@ -16,16 +16,26 @@
 // General Speed Controls
 int _standardBotDefaultStraightSpeed = DEFAULT_STRAIGHT_SPEED;
 int _standardBotDefaultTurnSpeed = DEFAULT_TURN_SPEED;
+int _standardBotDefaultStraightTimeout = DEFAULT_STRAIGHT_TIMEOUT;
+int _standardBotDefaultTurnTimeout = DEFAULT_TURN_TIMEOUT;
+
+volatile int straightSpeed;
+volatile int turnSpeed;
+
+//Used for speed boost!
+volatile int boostFlag = 0;
 
 // used to communicate to the motor_controller in another core
 volatile int _standard_bot_current_leftspd = 0;
 volatile int _standard_bot_current_rightspd = 0;
+volatile int _standard_bot_current_timeout = 0;
 volatile int _standard_bot_motor_flag = 0;
 
-void set_motor_controller(int leftSpeed, int rightSpeed)
+void set_motor_controller(int leftSpeed, int rightSpeed, int timeout)
 {
     _standard_bot_current_leftspd = leftSpeed;
     _standard_bot_current_rightspd = rightSpeed;
+    _standard_bot_current_timeout = timeout;
     _standard_bot_motor_flag = 1;
 }  
 
@@ -34,49 +44,68 @@ void Stop(void)
     drive_speed(0, 0);
 }  
 
-void Step(int leftSpeed, int rightSpeed)
-{
-#ifdef NO_ENCODERS
-    drive_speeds(leftSpeed, rightSpeed);
-#else
+void Go(int leftSpeed, int rightSpeed)
+{  
     drive_speed(leftSpeed, rightSpeed);
-#endif
-}  
+}
 
-void motor_controller()
+void motor_controller() 
 {
-    uint32_t last_ms = 0;
-    uint32_t current_ms = 0;
-    uint32_t wait_ms = 10;
-    uint32_t clk_wait = 80000*wait_ms;
-    uint32_t timeout_timer = 0;
-    uint32_t timeout_ms = 80000*500;
- 
-    while (1)
+    int timeout = 0;
+    while (1) 
     {
+        if (_standard_bot_motor_flag == 1)
+        {
+            Stop();
+            Go(_standard_bot_current_leftspd, _standard_bot_current_rightspd);
+            _standard_bot_motor_flag = 0;
+            timeout = _standard_bot_current_timeout;
+        }
+        else if ( --timeout <= 0 )
+        {
+            Stop();
+            timeout = 0;
+        }
+        pause(10);
+    }
+}
 
-        current_ms = CNT;  
-        if (current_ms-last_ms >= clk_wait)
-        {            
-            last_ms = current_ms;
-            if (_standard_bot_motor_flag == 1) 
-            {
-                Step(_standard_bot_current_leftspd,_standard_bot_current_rightspd);
-                _standard_bot_motor_flag = 0;
-                timeout_timer = current_ms;
-            }
-            if (current_ms - timeout_timer >= timeout_ms)
-            {
-                Stop();
-            }   
-         
-        }        
+
+void speedBoost()
+{
+    int boostTimeout = 0;
+    while (1)
+    {  
+        if (boostFlag == 1)
+        {
+            boostTimeout += (BOOST_TIME_SECONDS * 100); // scale seconds to 10ms units
+            straightSpeed = BOOST_STRAIGHT_SPEED;
+            turnSpeed = BOOST_TURN_SPEED;
+            boostFlag = 0;
+      
+        }
+        else if (--boostTimeout <= 0)
+        {
+            boostTimeout = 0;
+            straightSpeed = _standardBotDefaultStraightSpeed;
+            turnSpeed = _standardBotDefaultTurnSpeed;  
+        } 
+        pause(10);               
     }  
 }
 
 void StartStandardBotController()
 {
+#ifdef USING_360_SERVOS
+    servo360_couple(12, 13);
+    servo360_setCoupleScale(12, 13, 2000);
+#endif
+
+    straightSpeed = _standardBotDefaultStraightSpeed;
+    turnSpeed = _standardBotDefaultTurnSpeed;
+    
     cog_run(motor_controller, 128);
+    cog_run(speedBoost,128);
 }
 
 void HandleStandardBotCommands(const char* inputString, fdserial *term)
@@ -84,43 +113,28 @@ void HandleStandardBotCommands(const char* inputString, fdserial *term)
     if (strcmp(inputString, "l") == 0)
     {
         dprint(term, "left");
-        set_motor_controller(-_standardBotDefaultTurnSpeed,_standardBotDefaultTurnSpeed);
+        set_motor_controller(-turnSpeed, turnSpeed, _standardBotDefaultTurnTimeout);
     }          
     if (strcmp(inputString, "r") == 0)
     {
         dprint(term, "right");
-        set_motor_controller(_standardBotDefaultTurnSpeed, -_standardBotDefaultTurnSpeed);
+        set_motor_controller(turnSpeed, -turnSpeed, _standardBotDefaultTurnTimeout);
     }          
     if (strcmp(inputString, "f") == 0)
     {
         dprint(term, "forward");
-        set_motor_controller(_standardBotDefaultStraightSpeed, _standardBotDefaultStraightSpeed);
+        set_motor_controller(straightSpeed, straightSpeed, _standardBotDefaultStraightTimeout);
     }          
     if (strcmp(inputString, "b") == 0)
     {
         dprint(term, "back");
-        set_motor_controller(-_standardBotDefaultStraightSpeed, -_standardBotDefaultStraightSpeed);
+        set_motor_controller(-straightSpeed, -straightSpeed, _standardBotDefaultStraightTimeout);
     }
-    if (strcmp(inputString, "l_up") == 0)
+    if (strcmp(inputString, "boost") == 0)
     {
-        dprint(term, "left_stop");
-        Stop();
-    }          
-    if (strcmp(inputString, "r_up") == 0)
-    {
-        dprint(term, "right_stop");
-        Stop();
-    }          
-    if (strcmp(inputString, "f_up") == 0)
-    {
-        dprint(term, "forward_stop");
-        Stop();
-    }          
-    
-    if (strcmp(inputString, "b_up") == 0)
-    {
-        dprint(term, "back_stop");
-        Stop();
+        dprint(term, "Speed Boost!");
+        //boost for duration of boost timer
+        boostFlag = 1;                        
     }
     
     if (strncmp(inputString, "speed", 5) == 0) 

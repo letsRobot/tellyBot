@@ -14,8 +14,8 @@
 //
 
 // uncomment ONLY one of these to select from the bots below
-#define KIT_BOT
-//#define DART_BOT
+//#define KIT_BOT
+#define DART_BOT
 //#define RPE_TEST_BOT
 
 // config for "kit"
@@ -36,9 +36,13 @@
 #define CONFIGURED_EYES         EYES_WS2812
 #define LED_DATA_PIN            16
 #define DEFAULT_STRAIGHT_SPEED  60
+#define DEFAULT_STRAIGHT_TIMEOUT 25
+#define BOOST_STRAIGHT_SPEED    200
 #define DEFAULT_TURN_SPEED      30
-// uncomment this if dart has 360 feedback servos
-//#define USING_360_SERVOS
+#define DEFAULT_TURN_TIMEOUT    25
+#define BOOST_TURN_SPEED        30
+#define BOOST_TIME_SECONDS      30
+#define USING_360_SERVOS
 #endif
 
 // bot config with APA102 (8x8 LuMini displays) eyes and faster serial bitrate
@@ -50,7 +54,12 @@
 #define LED_DATA_PIN            8
 #define LED_CLOCK_PIN           7       // the clock pin is only used if you choose EYES_APA102
 #define DEFAULT_STRAIGHT_SPEED  60
+#define DEFAULT_STRAIGHT_TIMEOUT 25
+#define BOOST_STRAIGHT_SPEED    200
 #define DEFAULT_TURN_SPEED      30
+#define DEFAULT_TURN_TIMEOUT    25
+#define BOOST_TURN_SPEED        30
+#define BOOST_TIME_SECONDS      30
 #define USING_360_SERVOS
 #endif
 //
