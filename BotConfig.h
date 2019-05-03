@@ -14,8 +14,8 @@
 //
 
 // uncomment ONLY one of these to select from the bots below
-//#define KIT_BOT
-#define DART_BOT
+#define KIT_BOT
+//#define DART_BOT
 //#define RPE_TEST_BOT
 
 // config for "kit"
@@ -25,8 +25,8 @@
 #define CONFIGURED_ACCESSORIES  PAN_TILT_ARMS
 #define CONFIGURED_EYES         EYES_WS2812
 #define LED_DATA_PIN            21
-#define DEFAULT_STRAIGHT_SPEED  200
-#define DEFAULT_TURN_SPEED      200
+#define DEFAULT_STRAIGHT_SPEED  400
+#define DEFAULT_TURN_SPEED      400
 #endif
 
 #ifdef DART_BOT

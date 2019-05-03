@@ -21,9 +21,9 @@ volatile int motor_flag = 0;
 
 //              FORWARD          REVERSE
 //                 0   1   2   3    4    5   6    7   R   L  S    (Disable == 11)
-int motorA[] = {   0, -8, -8, -6,   0,   6,  8,   6,  4, -4, 0};
-int motorB[] = { -14, 12,  5,  2,  14,   2, -5, -12,  4, -4, 0};
-int motorC[] = {  14, -2,  6, 12, -14, -12, -6,   2,  4, -4, 0};
+int motorA[] = {   0, -8, -8, -6,   0,   6,  8,   6,  8, -8, 11};
+int motorB[] = { -14, 12,  5,  2,  14,   2, -5, -12,  8, -8, 11};
+int motorC[] = {  14, -2,  6, 12, -14, -12, -6,   2,  8, -8, 11};
 
 //General Speed Controls
 int defaultStraightSpeed = DEFAULT_STRAIGHT_SPEED;
@@ -126,12 +126,12 @@ void HandleTriBotCommands(const char* inputString, fdserial *term)
     if (strcmp(inputString, "l") == 0 )
     {
         dprint(term, "left");
-        set_triBot(9);
+        set_triBot(8);
     }
     if (strcmp(inputString, "r") == 0 )
     {
         dprint(term, "right");
-        set_triBot(8);
+        set_triBot(9);
     }
     if (strcmp(inputString, "f") == 0 && pivotFlag == 0)
     {
@@ -146,32 +146,32 @@ void HandleTriBotCommands(const char* inputString, fdserial *term)
     if (strcmp(inputString, "a") == 0 && pivotFlag == 0)
     {
         dprint(term, "slide left");
-        set_triBot(6);
+        set_triBot(2);
     }
     if (strcmp(inputString, "d") == 0 && pivotFlag == 0)
     {
         dprint(term, "slide right");
-        set_triBot(2);
+        set_triBot(6);
     }
     if (strcmp(inputString, "e") == 0 && pivotFlag == 0)
     {
         dprint(term, "forward-right");
-        set_triBot(3);
+        set_triBot(7);
     }
     if (strcmp(inputString, "q") == 0 && pivotFlag == 0)
     {
         dprint(term, "forward-left");
-        set_triBot(7);
+        set_triBot(3);
     }
     if (strcmp(inputString, "c") == 0 && pivotFlag == 0)
     {
         dprint(term, "backward-right");
-        set_triBot(1);
+        set_triBot(5);
     }
     if (strcmp(inputString, "z") == 0 && pivotFlag == 0)
     {
         dprint(term, "backward-left");
-        set_triBot(5);
+        set_triBot(1);
     }
     if (strcmp(inputString, "s") == 0)
     {
